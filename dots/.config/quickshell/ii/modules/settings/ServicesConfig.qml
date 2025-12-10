@@ -13,126 +13,24 @@ ContentPage {
         icon: "add_reaction"
         title: Translation.tr("Custom Emoji")
 
-        RippleButton {
-            Layout.fillWidth: true
-            buttonText: Translation.tr("Add Custom Emoji")
-            onClicked: {
-                addEmojiDialog.open()
-            }
-        }
-
-        ListView {
-            id: customEmojiListView
-            Layout.fillWidth: true
-            implicitHeight: Math.min(300, contentHeight)
-            clip: true
-            spacing: 8
-            model: Emojis.customEmojiList
-
-            delegate: Rectangle {
-                required property int index
-                required property var modelData
-                width: ListView.view ? ListView.view.width : 0
-                height: 60
-                radius: 8
-                color: Appearance.colors.colBackgroundSurfaceContainerHighest
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 8
-                    spacing: 12
-
-                    Image {
-                        Layout.preferredWidth: 44
-                        Layout.preferredHeight: 44
-                        source: `file://${modelData.imagePath}`
-                        fillMode: Image.PreserveAspectFit
-                        smooth: true
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 2
-
-                        Text {
-                            text: modelData.name
-                            font.weight: Font.Medium
-                            font.pixelSize: 14
-                            color: Appearance.colors.colTextPrimary
-                            Layout.fillWidth: true
-                        }
-
-                        Text {
-                            text: modelData.keywords
-                            opacity: 0.7
-                            font.pixelSize: 12
-                            color: Appearance.colors.colTextPrimary
-                            Layout.fillWidth: true
-                            elide: Text.ElideRight
-                        }
-                    }
-
-                    RippleButton {
-                        buttonText: Translation.tr("Remove")
-                        Layout.preferredHeight: 36
-                        onClicked: {
-                            Emojis.removeCustomEmoji(index)
-                        }
-                    }
-                }
-            }
-        }
-
-        Text {
-            visible: Emojis.customEmojiList.length === 0
-            text: Translation.tr("No custom emoji added yet. Click 'Add Custom Emoji' to get started.")
-            opacity: 0.6
-            wrapMode: Text.WordWrap
-            Layout.fillWidth: true
-            color: Appearance.colors.colTextPrimary
-        }
-    }
-
-    Dialog {
-        id: addEmojiDialog
-        title: Translation.tr("Add Custom Emoji")
-        modal: true
-        anchors.centerIn: parent
-        width: 400
-
-        ColumnLayout {
-            anchors.fill: parent
-            spacing: 12
-
-            Text {
-                text: Translation.tr("Name:")
-                color: Appearance.colors.colTextPrimary
-            }
+        ContentSubsection {
+            title: Translation.tr("Add New Custom Emoji")
 
             MaterialTextField {
                 id: emojiNameInput
                 Layout.fillWidth: true
-                placeholderText: Translation.tr("e.g., my_custom_emoji")
-            }
-
-            Text {
-                text: Translation.tr("Keywords (searchable tags):")
-                color: Appearance.colors.colTextPrimary
+                placeholderText: Translation.tr("Emoji name (e.g., my_custom_emoji)")
             }
 
             MaterialTextField {
                 id: emojiKeywordsInput
                 Layout.fillWidth: true
-                placeholderText: Translation.tr("e.g., custom special unique")
-            }
-
-            Text {
-                text: Translation.tr("Image file:")
-                color: Appearance.colors.colTextPrimary
+                placeholderText: Translation.tr("Keywords for search (e.g., custom special unique)")
             }
 
             RowLayout {
                 Layout.fillWidth: true
+                spacing: 8
 
                 MaterialTextField {
                     id: emojiFilePathInput
@@ -143,6 +41,7 @@ ContentPage {
 
                 RippleButton {
                     buttonText: Translation.tr("Browse")
+                    Layout.preferredWidth: 100
                     onClicked: {
                         fileDialog.open()
                     }
@@ -150,28 +49,15 @@ ContentPage {
             }
 
             Text {
-                id: errorLabel
+                id: addEmojiStatus
                 visible: false
-                color: "#f44336"
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
-        }
-
-        footer: RowLayout {
-            RippleButton {
-                buttonText: Translation.tr("Cancel")
-                onClicked: {
-                    addEmojiDialog.close()
-                    emojiNameInput.text = ""
-                    emojiKeywordsInput.text = ""
-                    emojiFilePathInput.text = ""
-                    errorLabel.visible = false
-                }
-            }
 
             RippleButton {
-                buttonText: Translation.tr("Add")
+                Layout.fillWidth: true
+                buttonText: Translation.tr("Add Custom Emoji")
                 enabled: emojiNameInput.text.trim() !== "" && emojiFilePathInput.text.trim() !== ""
                 onClicked: {
                     const result = Emojis.addCustomEmoji(
@@ -181,16 +67,102 @@ ContentPage {
                     )
                     
                     if (result.success) {
-                        addEmojiDialog.close()
                         emojiNameInput.text = ""
                         emojiKeywordsInput.text = ""
                         emojiFilePathInput.text = ""
-                        errorLabel.visible = false
+                        addEmojiStatus.text = Translation.tr("✓ Custom emoji added successfully!")
+                        addEmojiStatus.color = "#4CAF50"
+                        addEmojiStatus.visible = true
+                        statusTimer.restart()
                     } else {
-                        errorLabel.text = result.error
-                        errorLabel.visible = true
+                        addEmojiStatus.text = "✗ " + result.error
+                        addEmojiStatus.color = "#f44336"
+                        addEmojiStatus.visible = true
                     }
                 }
+            }
+
+            Timer {
+                id: statusTimer
+                interval: 3000
+                onTriggered: {
+                    addEmojiStatus.visible = false
+                }
+            }
+        }
+
+        ContentSubsection {
+            title: Translation.tr("Manage Custom Emoji")
+
+            ListView {
+                id: customEmojiListView
+                Layout.fillWidth: true
+                implicitHeight: Math.min(300, contentHeight)
+                clip: true
+                spacing: 8
+                model: Emojis.customEmojiList
+
+                delegate: Rectangle {
+                    required property int index
+                    required property var modelData
+                    width: ListView.view ? ListView.view.width : 0
+                    height: 60
+                    radius: 8
+                    color: Appearance.colors.colBackgroundSurfaceContainerHighest
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        spacing: 12
+
+                        Image {
+                            Layout.preferredWidth: 44
+                            Layout.preferredHeight: 44
+                            source: `file://${modelData.imagePath}`
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+
+                            Text {
+                                text: modelData.name
+                                font.weight: Font.Medium
+                                font.pixelSize: 14
+                                color: Appearance.colors.colTextPrimary
+                                Layout.fillWidth: true
+                            }
+
+                            Text {
+                                text: modelData.keywords
+                                opacity: 0.7
+                                font.pixelSize: 12
+                                color: Appearance.colors.colTextPrimary
+                                Layout.fillWidth: true
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        RippleButton {
+                            buttonText: Translation.tr("Remove")
+                            Layout.preferredHeight: 36
+                            onClicked: {
+                                Emojis.removeCustomEmoji(index)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Text {
+                visible: Emojis.customEmojiList.length === 0
+                text: Translation.tr("No custom emoji added yet. Use the form above to add one.")
+                opacity: 0.6
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                color: Appearance.colors.colTextPrimary
             }
         }
     }

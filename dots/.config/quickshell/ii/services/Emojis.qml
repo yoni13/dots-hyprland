@@ -86,6 +86,18 @@ Singleton {
             return { success: false, error: "Invalid file type. Supported: PNG, JPG, GIF, WEBP" }
         }
 
+        // Check if file exists and get its size
+        const statResult = Quickshell.execWait(["stat", "-c", "%s", imagePath])
+        if (statResult.exitCode !== 0) {
+            return { success: false, error: "File not found or cannot be accessed" }
+        }
+        
+        const fileSize = parseInt(statResult.stdout.trim())
+        const maxFileSize = 10 * 1024 * 1024 // 10 MB
+        if (fileSize > maxFileSize) {
+            return { success: false, error: "File too large. Maximum size is 10 MB" }
+        }
+
         // Generate unique filename
         const timestamp = Date.now()
         const originalName = imagePath.split('/').pop()
@@ -140,7 +152,7 @@ Singleton {
 
     function saveCustomEmojis() {
         const data = JSON.stringify(root.customEmojiList, null, 2)
-        customEmojiFileView.writeText(data)
+        customEmojiFileView.setText(data)
     }
 
     FileView { 

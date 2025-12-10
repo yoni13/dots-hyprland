@@ -93,7 +93,10 @@ Singleton {
             return { success: false, error: "File not found or cannot be accessed" }
         }
         
-        const fileSize = parseInt(statResult.stdout.trim())
+        const fileSize = parseInt(statResult.stdout.trim(), 10)
+        if (isNaN(fileSize)) {
+            return { success: false, error: "Unable to determine file size" }
+        }
         const maxFileSize = 10 * 1024 * 1024 // 10 MB
         if (fileSize > maxFileSize) {
             return { success: false, error: "File too large. Maximum size is 10 MB" }
@@ -102,7 +105,11 @@ Singleton {
         // Generate unique filename
         const timestamp = Date.now()
         const originalName = imagePath.split('/').pop()
-        const extension = originalName.substring(originalName.lastIndexOf('.'))
+        const dotIndex = originalName.lastIndexOf('.')
+        if (dotIndex === -1) {
+            return { success: false, error: "File must have a valid extension" }
+        }
+        const extension = originalName.substring(dotIndex)
         const newFileName = `custom_emoji_${timestamp}${extension}`
         const destPath = `${root.customEmojiDir}/${newFileName}`
 

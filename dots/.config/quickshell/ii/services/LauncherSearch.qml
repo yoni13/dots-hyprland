@@ -180,9 +180,11 @@ Singleton {
             return Emojis.fuzzyQuery(searchString).map(item => {
                 if (item.isCustom) {
                     // Custom emoji with image
+                    const nameParts = item.entry.split(' ');
+                    const displayName = nameParts.length > 0 ? nameParts[0] : item.entry;
                     return resultComp.createObject(null, {
                         rawValue: item.entry,
-                        name: item.entry.split(' ')[0],
+                        name: displayName,
                         iconName: `file://${item.imagePath}`,
                         iconType: LauncherSearchResult.IconType.System,
                         verb: Translation.tr("Copy path"),

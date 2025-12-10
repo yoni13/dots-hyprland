@@ -173,8 +173,8 @@ ContentPage {
         nameFilters: ["Image files (*.png *.jpg *.jpeg *.gif *.webp)"]
         onAccepted: {
             const path = fileDialog.selectedFile.toString()
-            // Remove file:// prefix if present
-            emojiFilePathInput.text = path.replace(/^file:\/\//, "")
+            // Remove file:// prefix using FileUtils
+            emojiFilePathInput.text = FileUtils.trimFileProtocol(path)
         }
     }
 

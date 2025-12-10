@@ -175,21 +175,38 @@ Singleton {
                 });
             }).filter(Boolean);
         } else if (root.query.startsWith(Config.options.search.prefix.emojis)) {
-            // Clipboard
+            // Emojis (including custom)
             const searchString = StringUtils.cleanPrefix(root.query, Config.options.search.prefix.emojis);
-            return Emojis.fuzzyQuery(searchString).map(entry => {
-                const emoji = entry.match(/^\s*(\S+)/)?.[1] || "";
-                return resultComp.createObject(null, {
-                    rawValue: entry,
-                    name: entry.replace(/^\s*\S+\s+/, ""),
-                    iconName: emoji,
-                    iconType: LauncherSearchResult.IconType.Text,
-                    verb: Translation.tr("Copy"),
-                    type: Translation.tr("Emoji"),
-                    execute: () => {
-                        Quickshell.clipboardText = entry.match(/^\s*(\S+)/)?.[1];
-                    }
-                });
+            return Emojis.fuzzyQuery(searchString).map(item => {
+                if (item.isCustom) {
+                    // Custom emoji with image
+                    return resultComp.createObject(null, {
+                        rawValue: item.entry,
+                        name: item.entry.split(' ')[0],
+                        iconName: `file://${item.imagePath}`,
+                        iconType: LauncherSearchResult.IconType.System,
+                        verb: Translation.tr("Copy path"),
+                        type: Translation.tr("Custom Emoji"),
+                        execute: () => {
+                            Quickshell.clipboardText = item.imagePath;
+                        }
+                    });
+                } else {
+                    // Standard emoji
+                    const entry = item.entry
+                    const emoji = entry.match(/^\s*(\S+)/)?.[1] || "";
+                    return resultComp.createObject(null, {
+                        rawValue: entry,
+                        name: entry.replace(/^\s*\S+\s+/, ""),
+                        iconName: emoji,
+                        iconType: LauncherSearchResult.IconType.Text,
+                        verb: Translation.tr("Copy"),
+                        type: Translation.tr("Emoji"),
+                        execute: () => {
+                            Quickshell.clipboardText = entry.match(/^\s*(\S+)/)?.[1];
+                        }
+                    });
+                }
             }).filter(Boolean);
         }
 

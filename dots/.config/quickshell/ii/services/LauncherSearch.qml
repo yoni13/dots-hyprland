@@ -193,7 +193,7 @@ Singleton {
                     });
                 } else {
                     // Standard emoji
-                    const entry = item.entry
+                    const entry = item.entry;
                     const emoji = entry.match(/^\s*(\S+)/)?.[1] || "";
                     return resultComp.createObject(null, {
                         rawValue: entry,

@@ -23,7 +23,8 @@ Singleton {
     readonly property var preparedEntries: list.map(a => ({
         name: Fuzzy.prepare(`${a}`),
         entry: a,
-        isCustom: false
+        isCustom: false,
+        imagePath: undefined
     })).concat(customEmojiList.map(a => ({
         name: Fuzzy.prepare(`${a.name} ${a.keywords}`),
         entry: `${a.name} ${a.keywords}`,

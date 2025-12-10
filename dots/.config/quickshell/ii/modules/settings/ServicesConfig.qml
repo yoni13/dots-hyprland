@@ -75,7 +75,7 @@ ContentPage {
                         addEmojiStatus.visible = true
                         statusTimer.restart()
                     } else {
-                        addEmojiStatus.text = "✗ " + result.error
+                        addEmojiStatus.text = Translation.tr("✗ Error: %1").arg(result.error)
                         addEmojiStatus.color = "#f44336"
                         addEmojiStatus.visible = true
                     }

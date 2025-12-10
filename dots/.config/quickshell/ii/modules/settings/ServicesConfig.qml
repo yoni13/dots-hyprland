@@ -1,11 +1,182 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
+import QtQuick.Dialogs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 
 ContentPage {
     forceWidth: true
+
+    ContentSection {
+        icon: "add_reaction"
+        title: Translation.tr("Custom Emoji")
+
+        ContentSubsection {
+            title: Translation.tr("Add New Custom Emoji")
+
+            MaterialTextField {
+                id: emojiNameInput
+                Layout.fillWidth: true
+                placeholderText: Translation.tr("Emoji name (e.g., my_custom_emoji)")
+            }
+
+            MaterialTextField {
+                id: emojiKeywordsInput
+                Layout.fillWidth: true
+                placeholderText: Translation.tr("Keywords for search (e.g., custom special unique)")
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                MaterialTextField {
+                    id: emojiFilePathInput
+                    Layout.fillWidth: true
+                    placeholderText: Translation.tr("Select an image file...")
+                    readOnly: true
+                }
+
+                RippleButton {
+                    buttonText: Translation.tr("Browse")
+                    Layout.preferredWidth: 100
+                    onClicked: {
+                        fileDialog.open()
+                    }
+                }
+            }
+
+            Text {
+                id: addEmojiStatus
+                visible: false
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+
+            RippleButton {
+                Layout.fillWidth: true
+                buttonText: Translation.tr("Add Custom Emoji")
+                enabled: emojiNameInput.text.trim() !== "" && emojiFilePathInput.text.trim() !== ""
+                onClicked: {
+                    const result = Emojis.addCustomEmoji(
+                        emojiNameInput.text.trim(),
+                        emojiKeywordsInput.text.trim(),
+                        emojiFilePathInput.text.trim()
+                    )
+                    
+                    if (result.success) {
+                        emojiNameInput.text = ""
+                        emojiKeywordsInput.text = ""
+                        emojiFilePathInput.text = ""
+                        addEmojiStatus.text = Translation.tr("✓ Custom emoji added successfully!")
+                        addEmojiStatus.color = "#4CAF50"
+                        addEmojiStatus.visible = true
+                        statusTimer.restart()
+                    } else {
+                        addEmojiStatus.text = Translation.tr("✗ Error: %1").arg(result.error)
+                        addEmojiStatus.color = "#f44336"
+                        addEmojiStatus.visible = true
+                    }
+                }
+            }
+
+            Timer {
+                id: statusTimer
+                interval: 3000
+                onTriggered: {
+                    addEmojiStatus.visible = false
+                }
+            }
+        }
+
+        ContentSubsection {
+            title: Translation.tr("Manage Custom Emoji")
+
+            ListView {
+                id: customEmojiListView
+                Layout.fillWidth: true
+                implicitHeight: Math.min(300, contentHeight)
+                clip: true
+                spacing: 8
+                model: Emojis.customEmojiList
+
+                delegate: Rectangle {
+                    required property int index
+                    required property var modelData
+                    width: ListView.view ? ListView.view.width : 0
+                    height: 60
+                    radius: 8
+                    color: Appearance.colors.colBackgroundSurfaceContainerHighest
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        spacing: 12
+
+                        Image {
+                            Layout.preferredWidth: 44
+                            Layout.preferredHeight: 44
+                            source: `file://${modelData.imagePath}`
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+
+                            Text {
+                                text: modelData.name
+                                font.weight: Font.Medium
+                                font.pixelSize: 14
+                                color: Appearance.colors.colTextPrimary
+                                Layout.fillWidth: true
+                            }
+
+                            Text {
+                                text: modelData.keywords
+                                opacity: 0.7
+                                font.pixelSize: 12
+                                color: Appearance.colors.colTextPrimary
+                                Layout.fillWidth: true
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        RippleButton {
+                            buttonText: Translation.tr("Remove")
+                            Layout.preferredHeight: 36
+                            onClicked: {
+                                Emojis.removeCustomEmoji(index)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Text {
+                visible: Emojis.customEmojiList.length === 0
+                text: Translation.tr("No custom emoji added yet. Use the form above to add one.")
+                opacity: 0.6
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                color: Appearance.colors.colTextPrimary
+            }
+        }
+    }
+
+    FileDialog {
+        id: fileDialog
+        title: Translation.tr("Select Emoji Image")
+        nameFilters: ["Image files (*.png *.jpg *.jpeg *.gif *.webp)"]
+        onAccepted: {
+            const path = fileDialog.selectedFile.toString()
+            // Remove file:// prefix using FileUtils
+            emojiFilePathInput.text = FileUtils.trimFileProtocol(path)
+        }
+    }
 
     ContentSection {
         icon: "neurology"

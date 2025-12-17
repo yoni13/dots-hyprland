@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
-import QtQuick.Dialogs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
@@ -28,24 +27,10 @@ ContentPage {
                 placeholderText: Translation.tr("Keywords for search (e.g., custom special unique)")
             }
 
-            RowLayout {
+            MaterialTextField {
+                id: emojiFilePathInput
                 Layout.fillWidth: true
-                spacing: 8
-
-                MaterialTextField {
-                    id: emojiFilePathInput
-                    Layout.fillWidth: true
-                    placeholderText: Translation.tr("Select an image file...")
-                    readOnly: true
-                }
-
-                RippleButton {
-                    buttonText: Translation.tr("Browse")
-                    Layout.preferredWidth: 100
-                    onClicked: {
-                        fileDialog.open()
-                    }
-                }
+                placeholderText: Translation.tr("Image file path (e.g., /home/user/Pictures/emoji.png)")
             }
 
             Text {
@@ -164,17 +149,6 @@ ContentPage {
                 Layout.fillWidth: true
                 color: Appearance.colors.colTextPrimary
             }
-        }
-    }
-
-    FileDialog {
-        id: fileDialog
-        title: Translation.tr("Select Emoji Image")
-        nameFilters: ["Image files (*.png *.jpg *.jpeg *.gif *.webp)"]
-        onAccepted: {
-            const path = fileDialog.selectedFile.toString()
-            // Remove file:// prefix using FileUtils
-            emojiFilePathInput.text = FileUtils.trimFileProtocol(path)
         }
     }
 

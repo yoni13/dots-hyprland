@@ -51,24 +51,6 @@ Item {
     //     radius: 0 // TODO: figure out how to make the overlay thing work with rounding
     // }
 
-    // Rectangle {
-    //     id: selectionBorder
-    //     z: 1
-    //     anchors {
-    //         left: parent.left
-    //         top: parent.top
-    //         leftMargin: root.regionX
-    //         topMargin: root.regionY
-    //     }
-    //     width: root.regionWidth
-    //     height: root.regionHeight
-    //     color: "transparent"
-    //     border.color: root.color
-    //     border.width: 2
-    //     // radius: root.standardRounding
-    //     radius: 0 // TODO: figure out how to make the overlay thing work with rounding
-    // }
-
     DashedBorder {
         id: selectionBorder
         z: 9

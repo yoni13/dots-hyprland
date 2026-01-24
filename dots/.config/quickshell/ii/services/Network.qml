@@ -92,6 +92,10 @@ Singleton {
                 "PASSWORD": password
             },
             "command": ["bash", "-c", `nmcli connection modify ${network.ssid} wifi-sec.psk "$PASSWORD"`]
+                "PASSWORD": password,
+                "SSID": network.ssid
+            },
+            "command": ["bash", "-c", 'nmcli connection modify "$SSID" wifi-sec.psk "$PASSWORD"']
         })
     }
 

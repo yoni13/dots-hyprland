@@ -5,6 +5,8 @@
 
 // Adjust this to make the shell smaller or larger
 //@ pragma Env QT_SCALE_FACTOR=1
+// Remove two slashes below and adjust the value to change the UI scale
+////@ pragma Env QT_SCALE_FACTOR=1
 
 import "modules/common"
 import "services"

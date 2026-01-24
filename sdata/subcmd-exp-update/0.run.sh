@@ -363,8 +363,6 @@ handle_file_conflict() {
   echo "8) Backup to .update-backups/ and replace with repository version"
   echo
 
-  while true; do
-    if ! safe_read "Enter your choice (1-8): " choice "6"; then
   local choice=""
   local default_val="${DEFAULT_CHOICE:-6}"  # Use DEFAULT_CHOICE or 6 (skip) as fallback
 
@@ -373,20 +371,6 @@ handle_file_conflict() {
     choice="$default_val"
     log_info "Using choice $choice for: $home_file"
   else
-    echo -e "\n${STY_YELLOW}Conflict detected:${STY_RST} $home_file"
-    echo "Repository version differs from your local version."
-    echo
-    echo "Choose an action:"
-    echo "1) Replace local file with repository version"
-    echo "2) Keep local file unchanged"
-    echo "3) Backup local file as ${filename}.old, use repository version"
-    echo "4) Save repository version as ${filename}.new, keep local file"
-    echo "5) Show diff and decide"
-    echo "6) Skip this file"
-    echo "7) Add to ignore and skip"
-    echo "8) Backup to .update-backups/ and replace with repository version"
-    echo
-
     while true; do
       if ! safe_read "Enter your choice (1-8 or name) [${default_val}]: " choice "$default_val"; then
         echo
@@ -450,8 +434,6 @@ handle_file_conflict() {
       return
     fi
 
-    case $choice in
-    1)
     case $subchoice in
     r)
       if [[ "$DRY_RUN" == true ]]; then
@@ -460,125 +442,6 @@ handle_file_conflict() {
         cp -p "$repo_file" "$home_file"
         log_success "Replaced $home_file with repository version"
       fi
-      break
-      ;;
-    2)
-      log_info "Keeping local version of $home_file"
-      break
-      ;;
-    3)
-      if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY-RUN] Would backup local file to ${filename}.old and update with repository version"
-      else
-        mv "$home_file" "${dirname}/${filename}.old"
-        cp -p "$repo_file" "$home_file"
-        log_success "Backed up local file to ${filename}.old and updated with repository version"
-      fi
-      break
-      ;;
-    4)
-      if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY-RUN] Would save repository version as ${filename}.new, keep local file"
-      else
-        cp -p "$repo_file" "${dirname}/${filename}.new"
-        log_success "Saved repository version as ${filename}.new, kept local file"
-      fi
-      break
-      ;;
-    5)
-      show_diff "$home_file" "$repo_file"
-      echo
-      echo "After reviewing the diff, choose:"
-      echo "r) Replace with repository version"
-      echo "k) Keep local version"
-      echo "b) Backup local and use repository version"
-      echo "n) Save repository version as .new"
-      echo "s) Skip this file"
-      echo "i) Add to ignore and skip"
-      echo "B) Backup to .update-backups/ and replace"
-
-      if ! safe_read "Enter your choice (r/k/b/n/s/i/B): " subchoice "s"; then
-        echo
-        log_warning "Failed to read input. Skipping file."
-        return
-      fi
-
-      case $subchoice in
-      r)
-        if [[ "$DRY_RUN" == true ]]; then
-          log_info "[DRY-RUN] Would replace $home_file with repository version"
-        else
-          cp -p "$repo_file" "$home_file"
-          log_success "Replaced $home_file with repository version"
-        fi
-        break
-        ;;
-      k)
-        log_info "Keeping local version of $home_file"
-        break
-        ;;
-      b)
-        if [[ "$DRY_RUN" == true ]]; then
-          log_info "[DRY-RUN] Would backup local file to ${filename}.old and update"
-        else
-          mv "$home_file" "${dirname}/${filename}.old"
-          cp -p "$repo_file" "$home_file"
-          log_success "Backed up local file to ${filename}.old and updated"
-        fi
-        break
-        ;;
-      n)
-        if [[ "$DRY_RUN" == true ]]; then
-          log_info "[DRY-RUN] Would save repository version as ${filename}.new"
-        else
-          cp -p "$repo_file" "${dirname}/${filename}.new"
-          log_success "Saved repository version as ${filename}.new"
-        fi
-        break
-        ;;
-      s)
-        log_info "Skipping $home_file"
-        break
-        ;;
-      i)
-        local relative_path_to_home="${home_file#$HOME/}"
-        if [[ "$DRY_RUN" == true ]]; then
-          log_info "[DRY-RUN] Would add '$relative_path_to_home' to $HOME_UPDATE_IGNORE_FILE"
-        else
-          echo "$relative_path_to_home" >>"$HOME_UPDATE_IGNORE_FILE"
-          log_success "Added '$relative_path_to_home' to $HOME_UPDATE_IGNORE_FILE and skipped."
-        fi
-        break
-        ;;
-      B)
-        if backup_file "$home_file"; then
-          if [[ "$DRY_RUN" != true ]]; then
-            cp -p "$repo_file" "$home_file"
-            log_success "Replaced $home_file with repository version"
-          fi
-        fi
-        break
-        ;;
-      *)
-        echo "Invalid choice. Please try again."
-        ;;
-      esac
-      ;;
-    6)
-      log_info "Skipping $home_file"
-      break
-      ;;
-    7)
-      local relative_path_to_home="${home_file#$HOME/}"
-      if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY-RUN] Would add '$relative_path_to_home' to $HOME_UPDATE_IGNORE_FILE"
-      else
-        echo "$relative_path_to_home" >>"$HOME_UPDATE_IGNORE_FILE"
-        log_success "Added '$relative_path_to_home' to $HOME_UPDATE_IGNORE_FILE and skipped."
-      fi
-      break
-      ;;
-    8)
       ;;
     k)
       log_info "Keeping local version of $home_file"
@@ -606,10 +469,10 @@ handle_file_conflict() {
     i)
       local relative_path_to_home="${home_file#$HOME/}"
       if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY-RUN] Would add '$relative_path_to_home' to $XDG_UPDATE_IGNORE_FILE"
+        log_info "[DRY-RUN] Would add '$relative_path_to_home' to $HOME_UPDATE_IGNORE_FILE"
       else
-        echo "$relative_path_to_home" >>"$XDG_UPDATE_IGNORE_FILE"
-        log_success "Added '$relative_path_to_home' to $XDG_UPDATE_IGNORE_FILE and skipped."
+        echo "$relative_path_to_home" >>"$HOME_UPDATE_IGNORE_FILE"
+        log_success "Added '$relative_path_to_home' to $HOME_UPDATE_IGNORE_FILE and skipped."
       fi
       ;;
     B)
@@ -619,13 +482,6 @@ handle_file_conflict() {
           log_success "Replaced $home_file with repository version"
         fi
       fi
-      break
-      ;;
-    *)
-      echo "Invalid choice. Please enter 1-8."
-      ;;
-    esac
-  done
       ;;
     *)
       log_info "Skipping $home_file"

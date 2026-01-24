@@ -124,12 +124,3 @@ StyledFlickable {
         }
     }
 }
-                            easing.type: Appearance.animation.elementMoveFast.type
-                            easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
-                        }
-                    }
-                }
-            }
-        }
-    }
-}

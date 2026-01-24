@@ -138,7 +138,6 @@ Rectangle {
 
         anchors.fill: parent
         // implicitHeight: tabStack.implicitHeight
-        spacing: 10
         spacing: 20
 
         // Navigation rail

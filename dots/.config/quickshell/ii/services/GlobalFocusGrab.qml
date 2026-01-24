@@ -63,9 +63,6 @@ Singleton {
     HyprlandFocusGrab {
         id: grab
         windows: root.dismissable.some(w => hasActive(w.contentItem)) ? [...root.dismissable, ...root.persistent] : [...root.dismissable]
-    HyprlandFocusGrab {
-        id: grab
-        windows: [...root.persistent, ...root.dismissable]
         active: root.dismissable.length > 0
         onCleared: () => {
             root.dismiss();

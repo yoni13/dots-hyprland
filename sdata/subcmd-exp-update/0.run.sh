@@ -45,9 +45,7 @@ if which pacman &>/dev/null; then
   fi
 fi
 UPDATE_IGNORE_FILE="${REPO_ROOT}/.updateignore"
-HOME_UPDATE_IGNORE_FILE="${HOME}/.updateignore"
 XDG_UPDATE_IGNORE_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/illogical-impulse/updateignore"
-#TODO: remove in future and add script to migrate to XDG path
 HOME_UPDATE_IGNORE_FILE="${HOME}/.updateignore" # Legacy support 
 
 # Global arrays for cached ignore patterns (performance optimization)
@@ -169,7 +167,6 @@ load_ignore_patterns() {
   IGNORE_PATTERNS=()
   IGNORE_SUBSTRING_PATTERNS=()
   
-  for ignore_file in "$UPDATE_IGNORE_FILE" "$HOME_UPDATE_IGNORE_FILE"; do
   for ignore_file in "$UPDATE_IGNORE_FILE" "$XDG_UPDATE_IGNORE_FILE" "$HOME_UPDATE_IGNORE_FILE"; do
     [[ ! -f "$ignore_file" ]] && continue
     
@@ -1201,7 +1198,6 @@ if [[ "$process_files" == true ]]; then
 
     ensure_directory "$home_dir_path" || continue
 
-    while IFS= read -r -d '' repo_file; do
     while IFS= read -r -d '' -u 9 repo_file; do
       # Calculate relative path from the repo source directory
       rel_path="${repo_file#$repo_dir_path/}"
@@ -1256,7 +1252,6 @@ if [[ "$process_files" == true ]]; then
         fi
         ((files_created++))
       fi
-    done < <(get_changed_files "$repo_dir_path") || true
     done 9< <(get_changed_files "$repo_dir_path") || true
     echo
   done
@@ -1317,11 +1312,6 @@ if [[ "$process_files" == true ]]; then
   echo "- New files created: $files_created"
 fi
 
-if [[ ! -f "$HOME_UPDATE_IGNORE_FILE" && ! -f "$UPDATE_IGNORE_FILE" ]]; then
-  echo
-  log_info "Tip: Create ignore files to exclude files from updates:"
-  echo "  - Repository ignore: ${REPO_ROOT}/.updateignore"
-  echo "  - User ignore: ~/.updateignore"
 if [[ ! -f "$XDG_UPDATE_IGNORE_FILE" && ! -f "$UPDATE_IGNORE_FILE" ]]; then
   echo
   log_info "Tip: Create ignore files to exclude files from updates:"

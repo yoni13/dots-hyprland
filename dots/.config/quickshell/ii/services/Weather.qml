@@ -42,7 +42,6 @@ Singleton {
         visib: 0,
         press: 0,
         temp: 0,
-        tempFeelsLike: 0
         tempFeelsLike: 0,
         lastRefresh: 0,
     })

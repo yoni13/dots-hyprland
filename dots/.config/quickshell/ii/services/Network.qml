@@ -89,9 +89,6 @@ Singleton {
         network.askingPassword = false;
         changePasswordProc.exec({
             "environment": {
-                "PASSWORD": password
-            },
-            "command": ["bash", "-c", `nmcli connection modify ${network.ssid} wifi-sec.psk "$PASSWORD"`]
                 "PASSWORD": password,
                 "SSID": network.ssid
             },

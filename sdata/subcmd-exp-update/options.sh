@@ -39,7 +39,6 @@ Ignore file patterns support:
 # `man getopt` to see more
 para=$(getopt \
   -o hfpnvs \
-  -l help,force,packages,dry-run,verbose,skip-notice,non-interactive \
   -l help,force,packages,dry-run,verbose,skip-notice,non-interactive,default-choice: \
   -n "$0" -- "$@")
 [ $? != 0 ] && echo "$0: Error when getopt, please recheck parameters." && exit 1

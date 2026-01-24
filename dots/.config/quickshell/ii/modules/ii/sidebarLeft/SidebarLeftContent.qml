@@ -21,9 +21,6 @@ Item {
         ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
         ...(root.translatorEnabled ? [{"icon": "translate", "name": Translation.tr("Translator")}] : []),
         ...(root.encoderDecoderEnabled ? [{"icon": "data_object", "name": Translation.tr("Encoder")}] : []),
-    property var tabButtonList: [
-        ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
-        ...(root.translatorEnabled ? [{"icon": "translate", "name": Translation.tr("Translator")}] : []),
         ...((root.animeEnabled && !root.animeCloset) ? [{"icon": "bookmark_heart", "name": Translation.tr("Anime")}] : [])
     ]
     property int tabCount: swipeView.count
@@ -89,12 +86,9 @@ Item {
                 }
 
                 contentChildren: [
-                    ...((root.aiChatEnabled || (!root.translatorEnabled && !root.encoderDecoderEnabled && !root.animeEnabled)) ? [aiChat.createObject()] : []),
-                    ...(root.translatorEnabled ? [translator.createObject()] : []),
-                    ...(root.encoderDecoderEnabled ? [encoderDecoder.createObject()] : []),
-                    ...(root.animeEnabled ? [anime.createObject()] : [])
                     ...(root.aiChatEnabled ? [aiChat.createObject()] : []),
                     ...(root.translatorEnabled ? [translator.createObject()] : []),
+                    ...(root.encoderDecoderEnabled ? [encoderDecoder.createObject()] : []),
                     ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset)) ? [placeholder.createObject()] : []),
                     ...(root.animeEnabled ? [anime.createObject()] : []),
                 ]
@@ -114,10 +108,6 @@ Item {
             EncoderDecoder {}
         }
         Component {
-            id: anime
-            Anime {}
-        }
-        
             id: anime
             Anime {}
         }

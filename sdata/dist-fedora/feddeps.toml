@@ -3,6 +3,11 @@
 repos = [
   "ririko66z/dots-hyprland",
   "solopasha/hyprland",
+# "solopasha/hyprland" is not up to date to the current Hyprland version, replaced with the fork "sdegler/hyprland"
+[copr]
+repos = [
+  "ririko66z/dots-hyprland",
+  "sdegler/hyprland",
   "deltacopy/darkly",
   "alternateved/eza",
   "atim/starship"
@@ -84,6 +89,7 @@ packages = [
 packages = [
   "hyprland",
   "hyprland-qtutils",
+  "hyprland-guiutils",
   "hyprsunset",
   "wl-clipboard"
 ]

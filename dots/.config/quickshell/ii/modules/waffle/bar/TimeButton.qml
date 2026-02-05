@@ -34,7 +34,7 @@ BarButton {
                 }
                 WText {
                     anchors.right: parent.right
-                    text: DateTime.date
+                    text: DateTime.shortDate
                 }
             }
             FluentIcon {

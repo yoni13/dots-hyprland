@@ -15,7 +15,6 @@ Options:
   -h, --help         Show this help message
   -s, --skip-notice  Skip notice about script being untested
       --non-interactive
-                     Run without prompting for user input
                      Set default choice for file conflicts
                         replace: Replace local     keep: Keep local         old:  Backup as .old
                         new:     Save as .new      diff: Show diff          skip: Skip

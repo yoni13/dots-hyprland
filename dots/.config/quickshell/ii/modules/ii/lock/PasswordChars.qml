@@ -117,6 +117,8 @@ StyledFlickable {
                             from: Appearance.colors.colPrimary
                             to: Appearance.colors.colOnLayer1
                             duration: 1000
+                            easing.type: Appearance.animation.elementMoveFast.type
+                            easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve
                         }
                     }
                 }

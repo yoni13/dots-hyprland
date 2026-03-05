@@ -46,10 +46,10 @@ function delete_targets(){
       continue
     elif [[ "$path" == "$HOME"* ]]; then
       if [[ -d "$path" ]]; then
-	x rm -r -- "$path"
-      else
-	x rm -- "$path"
-      fi
+		x rm -r -- "$path"
+	else
+		x rm -- "$path"
+	fi
 
     else
       while true; do

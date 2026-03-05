@@ -274,6 +274,9 @@ Singleton {
                     property bool useUSCS: false // Instead of metric (SI) units
                     property int fetchInterval: 10 // minutes
                 }
+                property JsonObject externalIp: JsonObject {
+                    property bool enable: false
+                }
                 property JsonObject indicators: JsonObject {
                     property JsonObject notifications: JsonObject {
                         property bool showUnreadCount: false
@@ -496,6 +499,9 @@ Singleton {
                 property JsonObject translator: JsonObject {
                     property bool enable: false
                     property int delay: 300 // Delay before sending request. Reduces (potential) rate limits and lag.
+                }
+                property JsonObject encoderDecoder: JsonObject {
+                    property bool enable: true
                 }
                 property JsonObject ai: JsonObject {
                     property bool textFadeIn: false

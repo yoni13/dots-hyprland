@@ -338,6 +338,16 @@ Item { // Bar content region
                     WeatherBar {}
                 }
             }
+
+            // External IP
+            Loader {
+                Layout.leftMargin: 4
+                active: Config.options.bar.externalIp.enable
+
+                sourceComponent: BarGroup {
+                    ExternalIpBar {}
+                }
+            }
         }
     }
 }

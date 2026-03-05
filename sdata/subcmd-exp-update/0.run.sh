@@ -46,6 +46,7 @@ if which pacman &>/dev/null; then
 fi
 UPDATE_IGNORE_FILE="${REPO_ROOT}/.updateignore"
 XDG_UPDATE_IGNORE_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/illogical-impulse/updateignore"
+#TODO: remove in future and add script to migrate to XDG path
 HOME_UPDATE_IGNORE_FILE="${HOME}/.updateignore" # Legacy support 
 
 # Global arrays for cached ignore patterns (performance optimization)
@@ -112,7 +113,6 @@ safe_read() {
 
   echo -n "$prompt"
   
-  # Try to read from terminal with better detection
   # First, try reading from stdin (supports piped input like "yes 1 |")
   if read -r -t 0.1 input_value 2>/dev/null; then
     # Successfully read from stdin (piped input)
@@ -348,21 +348,6 @@ handle_file_conflict() {
   local home_file="$2"
   local filename=$(basename "$home_file")
   local dirname=$(dirname "$home_file")
-
-  echo -e "\n${STY_YELLOW}Conflict detected:${STY_RST} $home_file"
-  echo "Repository version differs from your local version."
-  echo
-  echo "Choose an action:"
-  echo "1) Replace local file with repository version"
-  echo "2) Keep local file unchanged"
-  echo "3) Backup local file as ${filename}.old, use repository version"
-  echo "4) Save repository version as ${filename}.new, keep local file"
-  echo "5) Show diff and decide"
-  echo "6) Skip this file"
-  echo "7) Add to ignore and skip"
-  echo "8) Backup to .update-backups/ and replace with repository version"
-  echo
-
   local choice=""
   local default_val="${DEFAULT_CHOICE:-6}"  # Use DEFAULT_CHOICE or 6 (skip) as fallback
 
@@ -371,6 +356,20 @@ handle_file_conflict() {
     choice="$default_val"
     log_info "Using choice $choice for: $home_file"
   else
+    echo -e "\n${STY_YELLOW}Conflict detected:${STY_RST} $home_file"
+    echo "Repository version differs from your local version."
+    echo
+    echo "Choose an action:"
+    echo "1) Replace local file with repository version"
+    echo "2) Keep local file unchanged"
+    echo "3) Backup local file as ${filename}.old, use repository version"
+    echo "4) Save repository version as ${filename}.new, keep local file"
+    echo "5) Show diff and decide"
+    echo "6) Skip this file"
+    echo "7) Add to ignore and skip"
+    echo "8) Backup to .update-backups/ and replace with repository version"
+    echo
+
     while true; do
       if ! safe_read "Enter your choice (1-8 or name) [${default_val}]: " choice "$default_val"; then
         echo
@@ -469,10 +468,10 @@ handle_file_conflict() {
     i)
       local relative_path_to_home="${home_file#$HOME/}"
       if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY-RUN] Would add '$relative_path_to_home' to $HOME_UPDATE_IGNORE_FILE"
+        log_info "[DRY-RUN] Would add '$relative_path_to_home' to $XDG_UPDATE_IGNORE_FILE"
       else
-        echo "$relative_path_to_home" >>"$HOME_UPDATE_IGNORE_FILE"
-        log_success "Added '$relative_path_to_home' to $HOME_UPDATE_IGNORE_FILE and skipped."
+        echo "$relative_path_to_home" >>"$XDG_UPDATE_IGNORE_FILE"
+        log_success "Added '$relative_path_to_home' to $XDG_UPDATE_IGNORE_FILE and skipped."
       fi
       ;;
     B)

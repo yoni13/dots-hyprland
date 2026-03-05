@@ -11,8 +11,6 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
-import QtQuick.Controls
-import Quickshell.Io
 
 Item { // Wrapper
     id: root

@@ -7,10 +7,6 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
-import Qt5Compat.GraphicalEffects
-import QtQuick.Controls
-import Quickshell.Io
-import Quickshell.Hyprland
 
 RowLayout {
     id: root

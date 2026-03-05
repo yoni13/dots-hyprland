@@ -80,7 +80,7 @@ Item { // Bar content region
         RowLayout {
             id: leftSectionRowLayout
             anchors.fill: parent
-            spacing: 10
+            spacing: 0
 
             LeftSidebarButton { // Left sidebar button
                 id: leftSidebarButton
@@ -336,16 +336,6 @@ Item { // Bar content region
 
                 sourceComponent: BarGroup {
                     WeatherBar {}
-                }
-            }
-
-            // External IP
-            Loader {
-                Layout.leftMargin: 4
-                active: Config.options.bar.externalIp.enable
-
-                sourceComponent: BarGroup {
-                    ExternalIpBar {}
                 }
             }
         }

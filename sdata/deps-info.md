@@ -154,10 +154,8 @@ Tips:
   - Used in Hyprland and Quickshell config.
 - `swappy`
   - Used in Quickshell config.
-- `tesseract`
-  - Used in Quickshell and Hyprland config.
-- `tesseract-data-eng`
-  - Used as data for tesseract.
+- `easyocr` (Python package, installed via venv from `sdata/uv/requirements.in`)
+  - Used in Quickshell and Hyprland config for text recognition.
 - `wf-recorder`
   - Used in Quickshell config.
 

@@ -152,8 +152,7 @@ quickshell, home_attrs, ... }:
       hyprshot #hyprshot
       slurp #slurp
       swappy #swappy
-      tesseract #tesseract
-      #tesseract-data-eng (TODO: Seems not available as nixpkg)
+      #tesseract (replaced by easyocr via python venv)
       wf-recorder #wf-recorder
 
 

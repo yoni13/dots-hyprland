@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
-# Get the list of installed fastflowlm models, skip the header, extract first column
-model_names=$(flm list 2>/dev/null | tail -n +2 | awk '{print $1}')
+# 1. Get the list
+# 2. Grep for the checkmark emoji (verified/downloaded)
+# 3. Extract the second column ($2) to get the model name
+model_names=$(flm list 2>/dev/null | grep "✅" | awk '{print $2}')
 
 # Build a properly escaped JSON array using jq
 if [ -z "$model_names" ]; then

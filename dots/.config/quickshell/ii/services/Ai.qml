@@ -402,7 +402,7 @@ Singleton {
                             "name": guessModelName(model),
                             "icon": guessModelLogo(model),
                             "description": Translation.tr("Local FastFlowLM model | %1").arg(model),
-                            "endpoint": "http://localhost:11434/v1/chat/completions",
+                            "endpoint": "http://localhost:52625/v1/chat/completions",
                             "model": model,
                             "requires_key": false,
                         })

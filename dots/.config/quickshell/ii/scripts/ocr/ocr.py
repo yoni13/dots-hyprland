@@ -10,10 +10,10 @@ def main():
         sys.exit(1)
 
     image_path = sys.argv[1]
-    langs = sys.argv[2:] if len(sys.argv) > 2 else ["en"]
+    langs = sys.argv[2:] if len(sys.argv) > 2 else ["en","ch_tra"]
 
-    reader = easyocr.Reader(langs, gpu=False, verbose=False)
-    results = reader.readtext(image_path, detail=0)
+    reader = easyocr.Reader(langs, gpu=True, verbose=False)
+    results = reader.readtext(image_path, detail=0, paragraph=True)
     print("\n".join(results))
 
 

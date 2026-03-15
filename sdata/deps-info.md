@@ -154,8 +154,8 @@ Tips:
   - Used in Hyprland and Quickshell config.
 - `swappy`
   - Used in Quickshell config.
-- `easyocr` (Python package, installed via venv from `sdata/uv/requirements.in`)
-  - Used in Quickshell and Hyprland config for text recognition.
+- `fastflowlm` (installed via yay)
+  - Used for OCR via the qwen3vl-it:4b vision model.
 - `wf-recorder`
   - Used in Quickshell config.
 

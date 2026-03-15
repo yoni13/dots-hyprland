@@ -7,10 +7,12 @@ This is important because there has been so many complaints about the failure in
 
 1. Edit `requirements.in`. You may refer to [PyPI](https://pypi.org/) for possible package names.
   - If PyPI does not have the needed package, we probably need to build it manually inside the venv. In such case we need to edit the install scripts.
+  - Packages that should come from a specific index (e.g. `pytorch-rocm`) can be annotated with `--index <name>` in `requirements.in`.
 2. Run `uv pip compile requirements.in -o requirements.txt` in this folder.
 
 **Notes:**
 - For reference see [uv doc](https://docs.astral.sh/uv/pip/dependencies/#using-requirementsin).
+- `pyproject.toml` defines additional package indexes (e.g. the ROCm 6.4 PyTorch index) that uv uses when compiling dependencies.
 - `requirements.txt` is included in Git. It's for locking package versions to enhance stability and reproducibility.[^1]
 
 [^1]: In fact, including package version lock file in Git is also the most common way for similar situations, for example the `package-lock.json` of Node.js projects (see also [this stackoverflow question](https://stackoverflow.com/questions/48524417/should-the-package-lock-json-file-be-added-to-gitignore)). Although there are some situations when it's not suitable to include the lock file, for example [the poetry document](https://python-poetry.org/docs/basic-usage/#committing-your-poetrylock-file-to-version-control) recommend application developers to include package version lock file in Git, but library developers should consider more, such as not including the lock file or including it but refreshing regularly.

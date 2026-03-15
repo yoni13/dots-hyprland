@@ -2,7 +2,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Try fastflowlm (qwen3vl-it:4b) for OCR if the server is reachable
-if curl -sf --max-time 2 http://localhost:52625/v1/models >/dev/null 2>&1; then
+if curl -sf --max-time 30 http://localhost:52625/v1/models >/dev/null 2>&1; then
     image_path="$1"
     image_b64=$(base64 -w0 "$image_path" 2>/dev/null)
     if [ -n "$image_b64" ]; then
@@ -30,6 +30,7 @@ if curl -sf --max-time 2 http://localhost:52625/v1/models >/dev/null 2>&1; then
 fi
 
 # Fallback: easyOCR via Python venv
+export HSA_OVERRIDE_GFX_VERSION=11.0.0
 source "$(eval echo "$ILLOGICAL_IMPULSE_VIRTUAL_ENV")/bin/activate"
 "$SCRIPT_DIR/ocr.py" "$@"
 deactivate

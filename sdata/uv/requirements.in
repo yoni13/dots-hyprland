@@ -16,3 +16,4 @@ pygobject
 tqdm
 numpy
 opencv-contrib-python
+easyocr

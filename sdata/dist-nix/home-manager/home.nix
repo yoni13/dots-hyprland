@@ -152,7 +152,7 @@ quickshell, home_attrs, ... }:
       hyprshot #hyprshot
       slurp #slurp
       swappy #swappy
-      #tesseract (replaced by easyocr via python venv)
+      #tesseract (replaced by fastflowlm)
       wf-recorder #wf-recorder
 
 

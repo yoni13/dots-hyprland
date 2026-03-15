@@ -1,2 +1,0 @@
-[tool.uv]
-torch-backend = "rocm6.4"

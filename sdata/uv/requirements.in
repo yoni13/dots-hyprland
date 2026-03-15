@@ -17,5 +17,5 @@ tqdm
 numpy
 opencv-contrib-python
 easyocr
-torch --index pytorch-rocm
-torchvision --index pytorch-rocm
+torch
+torchvision

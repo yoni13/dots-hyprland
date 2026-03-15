@@ -1,4 +1,2 @@
-[[tool.uv.index]]
-name = "pytorch-rocm"
-url = "https://download.pytorch.org/whl/rocm6.2"
-explicit = true
+[tool.uv]
+torch-backend = "rocm6.4"

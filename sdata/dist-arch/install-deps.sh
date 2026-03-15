@@ -104,6 +104,9 @@ for i in "${metapkgs[@]}"; do
   v install-local-pkgbuild "$i" "$metainstallflags"
 done
 
+## fastflowlm for local AI vision/OCR support
+v yay -S --needed --noconfirm fastflowlm
+
 ## Optional dependencies
 if pacman -Qs ^plasma-browser-integration$ ;then SKIP_PLASMAINTG=true;fi
 case $SKIP_PLASMAINTG in

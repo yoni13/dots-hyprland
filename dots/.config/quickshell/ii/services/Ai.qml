@@ -388,6 +388,36 @@ Singleton {
     }
 
     Process {
+        id: getFlmModels
+        running: true
+        command: ["bash", "-c", `${Directories.scriptPath}/ai/show-installed-flm-models.sh`.replace(/file:\/\//, "")]
+        stdout: SplitParser {
+            onRead: data => {
+                try {
+                    if (data.length === 0) return;
+                    const dataJson = JSON.parse(data);
+                    dataJson.forEach(model => {
+                        const safeModelName = root.safeModelName(model);
+                        root.addModel(safeModelName, {
+                            "name": guessModelName(model),
+                            "icon": guessModelLogo(model),
+                            "description": Translation.tr("Local FastFlowLM model | %1").arg(model),
+                            "endpoint": "http://localhost:11434/v1/chat/completions",
+                            "model": model,
+                            "requires_key": false,
+                        })
+                    });
+
+                    root.modelList = Object.keys(root.models);
+
+                } catch (e) {
+                    console.log("Could not fetch FastFlowLM models:", e);
+                }
+            }
+        }
+    }
+
+    Process {
         id: getDefaultPrompts
         running: true
         command: ["ls", "-1", Directories.defaultAiPrompts]

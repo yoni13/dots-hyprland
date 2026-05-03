@@ -23,6 +23,7 @@ Singleton {
     property Component geminiApiStrategy: GeminiApiStrategy {}
     property Component openaiApiStrategy: OpenAiApiStrategy {}
     property Component mistralApiStrategy: MistralApiStrategy {}
+    property Component acpApiStrategy: AcpApiStrategy {}
     readonly property string interfaceRole: "interface"
     readonly property string apiKeyEnvVarName: "API_KEY"
 
@@ -182,6 +183,12 @@ Singleton {
             "search": [],
             "none": [],
         },
+        // ACP agents manage their own tool use internally; we pass no tools.
+        "acp": {
+            "functions": [],
+            "search": [],
+            "none": []
+        },
         "mistral": {
             "functions": [
                 {
@@ -294,6 +301,83 @@ Singleton {
             "key_get_description": Translation.tr("**Instructions**: Log into Mistral account, go to Keys on the sidebar, click Create new key"),
             "api_format": "mistral",
         }),
+        // ── ACP (Agent Client Protocol) agents ────────────────────────────────
+        // These run as local CLI subprocesses speaking JSON-RPC over stdin/stdout.
+        // The `endpoint` field is the shell command used to launch the agent.
+        // Gemini CLI — model: "" uses whatever the CLI defaults to.
+        // Add variants with a real modelId to request a specific model via session/set_model.
+        "gemini-cli": aiModelComponent.createObject(this, {
+            "name": "Gemini CLI",
+            "icon": "google-gemini-symbolic",
+            "description": Translation.tr("ACP agent | Google Gemini CLI (default model)\nRequires: `npm i -g @google/gemini-cli` and `gemini auth login`"),
+            "homepage": "https://github.com/google-gemini/gemini-cli",
+            "endpoint": "gemini --acp",
+            "model": "",
+            "requires_key": false,
+            "api_format": "acp",
+        }),
+        "gemini-cli-flash": aiModelComponent.createObject(this, {
+            "name": "Gemini CLI — Flash",
+            "icon": "google-gemini-symbolic",
+            "description": Translation.tr("ACP agent | Google Gemini CLI · gemini-2.5-flash\nRequires: `npm i -g @google/gemini-cli` and `gemini auth login`"),
+            "homepage": "https://github.com/google-gemini/gemini-cli",
+            "endpoint": "gemini --acp",
+            "model": "gemini-2.5-flash",
+            "requires_key": false,
+            "api_format": "acp",
+        }),
+        "gemini-cli-pro": aiModelComponent.createObject(this, {
+            "name": "Gemini CLI — Pro",
+            "icon": "google-gemini-symbolic",
+            "description": Translation.tr("ACP agent | Google Gemini CLI · gemini-2.5-pro\nRequires: `npm i -g @google/gemini-cli` and `gemini auth login`"),
+            "homepage": "https://github.com/google-gemini/gemini-cli",
+            "endpoint": "gemini --acp",
+            "model": "gemini-2.5-pro",
+            "requires_key": false,
+            "api_format": "acp",
+        }),
+        // Claude Code — model: "" uses whatever Claude Code defaults to.
+        "claude-code": aiModelComponent.createObject(this, {
+            "name": "Claude Code",
+            "icon": "claude-symbolic",
+            "description": Translation.tr("ACP agent | Anthropic Claude Code (default model)\nRequires: `npm i -g @agentclientprotocol/claude-agent-acp` and Claude Code authenticated"),
+            "homepage": "https://github.com/agentclientprotocol/claude-agent-acp",
+            "endpoint": "claude-agent-acp",
+            "model": "",
+            "requires_key": false,
+            "api_format": "acp",
+        }),
+        "claude-code-sonnet": aiModelComponent.createObject(this, {
+            "name": "Claude Code — Sonnet",
+            "icon": "claude-symbolic",
+            "description": Translation.tr("ACP agent | Anthropic Claude Code · claude-sonnet-4-5\nRequires: `npm i -g @agentclientprotocol/claude-agent-acp` and Claude Code authenticated"),
+            "homepage": "https://github.com/agentclientprotocol/claude-agent-acp",
+            "endpoint": "claude-agent-acp",
+            "model": "claude-sonnet-4-5",
+            "requires_key": false,
+            "api_format": "acp",
+        }),
+        "claude-code-opus": aiModelComponent.createObject(this, {
+            "name": "Claude Code — Opus",
+            "icon": "claude-symbolic",
+            "description": Translation.tr("ACP agent | Anthropic Claude Code · claude-opus-4-5\nRequires: `npm i -g @agentclientprotocol/claude-agent-acp` and Claude Code authenticated"),
+            "homepage": "https://github.com/agentclientprotocol/claude-agent-acp",
+            "endpoint": "claude-agent-acp",
+            "model": "claude-opus-4-5",
+            "requires_key": false,
+            "api_format": "acp",
+        }),
+        // Codex CLI
+        "codex-cli": aiModelComponent.createObject(this, {
+            "name": "Codex CLI",
+            "icon": "openai-symbolic",
+            "description": Translation.tr("ACP agent | OpenAI Codex CLI (default model)\nRequires: Codex CLI installed and authenticated"),
+            "homepage": "https://github.com/openai/codex",
+            "endpoint": "codex --acp",
+            "model": "",
+            "requires_key": false,
+            "api_format": "acp",
+        }),
     }
     property var modelList: Object.keys(root.models)
     property var currentModelId: Persistent.states?.ai?.model || modelList[0]
@@ -302,6 +386,7 @@ Singleton {
         "openai": openaiApiStrategy.createObject(this),
         "gemini": geminiApiStrategy.createObject(this),
         "mistral": mistralApiStrategy.createObject(this),
+        "acp": acpApiStrategy.createObject(this),
     }
     property ApiStrategy currentApiStrategy: apiStrategies[models[currentModelId]?.api_format || "openai"]
 

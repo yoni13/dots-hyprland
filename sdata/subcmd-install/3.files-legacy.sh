@@ -48,8 +48,15 @@ case "${SKIP_HYPRLAND}" in
   true) sleep 0;;
   *)
     install_dir__sync dots/.config/hypr/hyprland "$XDG_CONFIG_HOME"/hypr/hyprland
-    for i in hyprlock.conf {monitors,workspaces}.conf ; do
-      install_file__auto_backup "dots/.config/hypr/$i" "${XDG_CONFIG_HOME}/hypr/$i"
+    install_dir__sync dots/.config/hypr/hyprlock "$XDG_CONFIG_HOME"/hypr/hyprlock
+    if [ -d "dots/.config/hypr/Fonts" ]; then
+      install_dir__sync dots/.config/hypr/Fonts "$XDG_CONFIG_HOME"/hypr/Fonts
+    fi
+    for file in dots/.config/hypr/hyprlock.conf dots/.config/hypr/monitors.conf* dots/.config/hypr/workspaces.conf* dots/.config/hypr/*.png ; do
+      if [ -f "$file" ]; then
+        filename=$(basename "$file")
+        install_file__auto_backup "$file" "${XDG_CONFIG_HOME}/hypr/$filename"
+      fi
     done
     for i in hyprland.conf ; do
       case "${SKIP_HYPRLAND_ENTRY}" in

@@ -22,4 +22,10 @@ hl.on("hyprland.start", function ()
 
     -- Cursor
     hl.exec_cmd("hyprctl setcursor Bibata-Modern-Classic 24")
+
+    -- AI: fastflowlm with qwen3vl-it:4b for vision/OCR
+    hl.exec_cmd("flm serve qwen3vl-it:4b")
+
+    -- IDA MCP server
+    hl.exec_cmd("uv --directory ~/ctf/tools/idamcp run idalib-mcp --isolated-contexts --host 127.0.0.1 --port 13337")
 end)

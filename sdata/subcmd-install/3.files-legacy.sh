@@ -56,7 +56,7 @@ case "${SKIP_HYPRLAND}" in
       mv "${XDG_CONFIG_HOME}/hypr/hyprland.conf" "${XDG_CONFIG_HOME}/hypr/hyprland.conf.old" # disable old config
       echo 'hyprland.conf has been renamed to hyprland.conf.old. This is to allow the new lua config to load.'
     fi
-    for file in dots/.config/hypr/hyprlock.conf dots/.config/hypr/*.png ; do
+    for file in dots/.config/hypr/hyprlock.conf dots/.config/hypr/monitors.lua* dots/.config/hypr/*.png ; do
       if [ -f "$file" ]; then
         filename=$(basename "$file")
         install_file__auto_backup "$file" "${XDG_CONFIG_HOME}/hypr/$filename"
@@ -76,7 +76,7 @@ case "${SKIP_HYPRLAND}" in
       fi
     done
     if [ "$OS_GROUP_ID" = "fedora" ];then
-      v bash -c "printf \"# For fedora to setup polkit\nexec-once = /usr/libexec/kf6/polkit-kde-authentication-agent-1\n\" >> ${XDG_CONFIG_HOME}/hypr/hyprland/execs.conf"
+      v bash -c "printf \"\n-- For fedora to setup polkit\nhl.on(\\\"hyprland.start\\\", function ()\n    hl.exec_cmd(\\\"/usr/libexec/kf6/polkit-kde-authentication-agent-1\\\")\nend)\n\" >> ${XDG_CONFIG_HOME}/hypr/custom/execs.lua"
     fi
 
     install_dir__ignore_existing "dots/.config/hypr/custom" "${XDG_CONFIG_HOME}/hypr/custom"

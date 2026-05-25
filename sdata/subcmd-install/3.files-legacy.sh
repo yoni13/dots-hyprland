@@ -52,13 +52,17 @@ case "${SKIP_HYPRLAND}" in
     if [ -d "dots/.config/hypr/Fonts" ]; then
       install_dir__sync dots/.config/hypr/Fonts "$XDG_CONFIG_HOME"/hypr/Fonts
     fi
-    for file in dots/.config/hypr/hyprlock.conf dots/.config/hypr/monitors.conf* dots/.config/hypr/workspaces.conf* dots/.config/hypr/*.png ; do
+    if [ -f "${XDG_CONFIG_HOME}/hypr/hyprland.conf" ]; then
+      mv "${XDG_CONFIG_HOME}/hypr/hyprland.conf" "${XDG_CONFIG_HOME}/hypr/hyprland.conf.old" # disable old config
+      echo 'hyprland.conf has been renamed to hyprland.conf.old. This is to allow the new lua config to load.'
+    fi
+    for file in dots/.config/hypr/hyprlock.conf dots/.config/hypr/*.png ; do
       if [ -f "$file" ]; then
         filename=$(basename "$file")
         install_file__auto_backup "$file" "${XDG_CONFIG_HOME}/hypr/$filename"
       fi
     done
-    for i in hyprland.conf ; do
+    for i in hyprland.lua ; do
       case "${SKIP_HYPRLAND_ENTRY}" in
         true) sleep 0;;
         *) install_file "dots/.config/hypr/$i" "${XDG_CONFIG_HOME}/hypr/$i" ;;

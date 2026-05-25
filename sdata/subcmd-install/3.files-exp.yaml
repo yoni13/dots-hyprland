@@ -9,7 +9,7 @@
 version: "1.0"
 user_preferences:
   shell: "fish" # fish | zsh
-  terminal: "foot" # kitty | foot
+  terminal: "kitty" # kitty | foot
   keybindings: "default" # default | vim
 patterns:
   # Always install these files
@@ -46,25 +46,13 @@ patterns:
   - from: "dots/.config/hypr"
     to: "$XDG_CONFIG_HOME/hypr"
     mode: "sync"
-    excludes: ["custom", "hyprlock.conf", "hypridle.conf", "monitors.conf*", "workspaces.conf*"]
+    excludes: ["custom", "hyprlock.conf", "hypridle.conf"]
   # Hyprland special files
   - from: "dots/.config/hypr/hypridle.conf"
     to: "$XDG_CONFIG_HOME/hypr/hypridle.conf"
     mode: "soft-backup"
   - from: "dots/.config/hypr/hyprlock.conf"
     to: "$XDG_CONFIG_HOME/hypr/hyprlock.conf"
-    mode: "soft-backup"
-  - from: "dots/.config/hypr/monitors.conf"
-    to: "$XDG_CONFIG_HOME/hypr/monitors.conf"
-    mode: "soft-backup"
-  - from: "dots/.config/hypr/monitors.conf.internal"
-    to: "$XDG_CONFIG_HOME/hypr/monitors.conf.internal"
-    mode: "soft-backup"
-  - from: "dots/.config/hypr/monitors.conf.externalonly"
-    to: "$XDG_CONFIG_HOME/hypr/monitors.conf.externalonly"
-    mode: "soft-backup"
-  - from: "dots/.config/hypr/workspaces.conf"
-    to: "$XDG_CONFIG_HOME/hypr/workspaces.conf"
     mode: "soft-backup"
   - from: "dots/.config/hypr/custom"
     to: "$XDG_CONFIG_HOME/hypr/custom"

@@ -15,6 +15,10 @@ is_qs_alive() {
 log "start_qs: requested config=$qs_config pid=$$"
 log "env: WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-unset} XDG_CURRENT_DESKTOP=${XDG_CURRENT_DESKTOP:-unset} HYPRLAND_INSTANCE_SIGNATURE=${HYPRLAND_INSTANCE_SIGNATURE:-unset}"
 
+# Hyprland can run exec-once before outputs/layers are fully usable.
+# Starting qs too early can pass TEST_ALIVE and then crash while creating layer surfaces.
+sleep 3
+
 if is_qs_alive; then
   log "start_qs: qs already alive"
   exit 0
@@ -29,8 +33,20 @@ for attempt in 1 2 3 4 5; do
   for _ in 1 2 3 4 5; do
     sleep 1
     if is_qs_alive; then
-      log "start_qs: qs alive after attempt=$attempt"
-      exit 0
+      log "start_qs: IPC alive after attempt=$attempt; watching for early crash"
+      sleep 8
+      if kill -0 "$qs_pid" 2>/dev/null && is_qs_alive; then
+        log "start_qs: qs stable after attempt=$attempt"
+        exit 0
+      fi
+      if kill -0 "$qs_pid" 2>/dev/null; then
+        log "start_qs: IPC disappeared while pid=$qs_pid is still running"
+      else
+        wait "$qs_pid"
+        status=$?
+        log "start_qs: pid=$qs_pid crashed after IPC became alive status=$status"
+      fi
+      break
     fi
     if ! kill -0 "$qs_pid" 2>/dev/null; then
       wait "$qs_pid"

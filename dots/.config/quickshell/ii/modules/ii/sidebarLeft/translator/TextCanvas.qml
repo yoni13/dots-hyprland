@@ -80,6 +80,7 @@ Rectangle {
             Item { Layout.fillWidth: true }
             ButtonGroup {
                 id: actions
+                Layout.rightMargin: 10
             }
         }
     }

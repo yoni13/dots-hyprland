@@ -290,6 +290,7 @@ Item {
                 toggled: false
                 buttonIcon: "power_settings_new"
                 onClicked: {
+                    GlobalStates.sidebarRightOpen = false;
                     GlobalStates.sessionOpen = true;
                 }
                 StyledToolTip {

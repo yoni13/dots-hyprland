@@ -2,6 +2,7 @@ pragma Singleton
 import qs.modules.common
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 
 /**
@@ -51,5 +52,19 @@ Singleton {
                 item: null
             }
         }
+    }
+
+    Process {
+        id: sleepInhibitor
+        command: [
+            "systemd-inhibit",
+            "--what=sleep:idle",
+            "--who=Quickshell",
+            "--why=Keep awake toggle is enabled",
+            "--mode=block",
+            "sleep",
+            "infinity"
+        ]
+        running: root.inhibit
     }
 }

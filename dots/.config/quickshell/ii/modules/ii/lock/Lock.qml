@@ -65,13 +65,13 @@ LockScreen {
 
     // Push everything down (visual only; workspace switch is in Connections above)
     Variants {
-        model: Quickshell.screens
+        model: Quickshell.screens.filter(screen => screen != null)
         delegate: Scope {
-            required property ShellScreen modelData
+            required property var modelData
             property bool shouldPush: GlobalStates.screenLocked
-            property string targetMonitorName: modelData.name
-            property int verticalMovementDistance: modelData.height
-            property int horizontalSqueeze: modelData.width * 0.2
+            property string targetMonitorName: modelData?.name ?? ""
+            property int verticalMovementDistance: modelData?.height ?? 0
+            property int horizontalSqueeze: (modelData?.width ?? 0) * 0.2
         }
     }
 }

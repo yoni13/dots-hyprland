@@ -21,7 +21,7 @@ Singleton {
     }
 
     function suspend() {
-        Quickshell.execDetached(["bash", "-c", "systemctl suspend || loginctl suspend"]);
+        Quickshell.execDetached(["bash", "-c", "systemctl suspend --no-block || loginctl suspend"]);
     }
 
     function logout() {
@@ -34,7 +34,7 @@ Singleton {
     }
 
     function hibernate() {
-        Quickshell.execDetached(["bash", "-c", `systemctl hibernate || loginctl hibernate`]);
+        Quickshell.execDetached(["bash", "-c", `systemctl hibernate --no-block || loginctl hibernate`]);
     }
 
     function poweroff() {

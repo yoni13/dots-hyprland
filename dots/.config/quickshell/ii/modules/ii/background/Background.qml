@@ -20,17 +20,20 @@ import qs.modules.ii.background.widgets.weather
 
 Variants {
     id: root
-    model: Quickshell.screens
+    model: Quickshell.screens.filter(screen => screen != null)
 
     PanelWindow {
         id: bgRoot
 
         required property var modelData
+        readonly property bool hasScreen: modelData != null && bgRoot.screen != null
+        readonly property real screenWidth: bgRoot.screen?.width ?? modelData?.width ?? 1
+        readonly property real screenHeight: bgRoot.screen?.height ?? modelData?.height ?? 1
 
         // Hide when fullscreen
-        property list<HyprlandWorkspace> workspacesForMonitor: Hyprland.workspaces.values.filter(workspace => workspace.monitor && workspace.monitor.name == monitor.name)
+        property list<HyprlandWorkspace> workspacesForMonitor: monitor == null ? [] : Hyprland.workspaces.values.filter(workspace => workspace.monitor && workspace.monitor.name == monitor.name)
         property var activeWorkspaceWithFullscreen: workspacesForMonitor.filter(workspace => ((workspace.toplevels.values.filter(window => window.wayland?.fullscreen)[0] != undefined) && workspace.active))[0]
-        visible: GlobalStates.screenLocked || (!(activeWorkspaceWithFullscreen != undefined)) || !Config?.options.background.hideWhenFullscreen
+        visible: hasScreen && (GlobalStates.screenLocked || (!(activeWorkspaceWithFullscreen != undefined)) || !Config?.options.background.hideWhenFullscreen)
 
         // Workspaces
         property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
@@ -51,12 +54,12 @@ Variants {
         readonly property real parallaxRation: Config.options.background.parallax.workspaceZoom
         property real minSuitableScale: 1 // Some reasonable init, to be updated
         property real effectiveWallpaperScale: minSuitableScale * parallaxRation
-        property int wallpaperWidth: modelData.width // Some reasonable init value, to be updated
-        property int wallpaperHeight: modelData.height // Some reasonable init value, to be updated
+        property int wallpaperWidth: screenWidth // Some reasonable init value, to be updated
+        property int wallpaperHeight: screenHeight // Some reasonable init value, to be updated
         property real scaledWallpaperWidth: wallpaperWidth * effectiveWallpaperScale
         property real scaledWallpaperHeight: wallpaperHeight * effectiveWallpaperScale
-        property real parallaxTotalPixelsX: Math.max(0, scaledWallpaperWidth - screen.width)
-        property real parallaxTotalPixelsY: Math.max(0, scaledWallpaperHeight - screen.height)
+        property real parallaxTotalPixelsX: Math.max(0, scaledWallpaperWidth - screenWidth)
+        property real parallaxTotalPixelsY: Math.max(0, scaledWallpaperHeight - screenHeight)
         readonly property bool verticalParallax: (Config.options.background.parallax.autoVertical && wallpaperHeight > wallpaperWidth) || Config.options.background.parallax.vertical
         // Colors
         property bool shouldBlur: (GlobalStates.screenLocked && Config.options.lock.blur.enable)
@@ -111,7 +114,7 @@ Variants {
                 onStreamFinished: {
                     const output = wallpaperSizeOutputCollector.text;
                     const [width, height] = output.split(" ").map(Number);
-                    const [screenWidth, screenHeight] = [bgRoot.screen.width, bgRoot.screen.height];
+                    const [screenWidth, screenHeight] = [bgRoot.screenWidth, bgRoot.screenHeight];
                     bgRoot.wallpaperWidth = width;
                     bgRoot.wallpaperHeight = height;
 
@@ -135,7 +138,7 @@ Variants {
                 cache: false
                 smooth: false
 
-                property int workspaceIndex: (bgRoot.monitor.activeWorkspace?.id ?? 1) - 1
+                property int workspaceIndex: (bgRoot.monitor?.activeWorkspace?.id ?? 1) - 1
                 property real middleFraction: 0.5
                 property real fraction: {
                     // 0 - start of the picture
@@ -166,16 +169,16 @@ Variants {
                 }
 
                 x: {
-                    if (bgRoot.screen.width > width) {
+                    if (bgRoot.screenWidth > width) {
                         // Center the picture
-                        return (bgRoot.screen.width - width) / 2;
+                        return (bgRoot.screenWidth - width) / 2;
                     }
                     return - bgRoot.parallaxTotalPixelsX * usedFractionX;
                 }
                 y: {
-                    if (bgRoot.screen.height > height) {
+                    if (bgRoot.screenHeight > height) {
                         // Center the picture
-                        return (bgRoot.screen.height - height) / 2;
+                        return (bgRoot.screenHeight - height) / 2;
                     }
                     return - bgRoot.parallaxTotalPixelsY * usedFractionY;
                 }
@@ -232,8 +235,8 @@ Variants {
                     var f = Config.options.background.parallax.widgetsFactor;
                     return f / bgRoot.parallaxRation;
                 }
-                readonly property real baseWallpaperOffsetX: (bgRoot.screen.width - wallpaper.width) / 2
-                readonly property real baseWallpaperOffsetY: (bgRoot.screen.height - wallpaper.height) / 2
+                readonly property real baseWallpaperOffsetX: (bgRoot.screenWidth - wallpaper.width) / 2
+                readonly property real baseWallpaperOffsetY: (bgRoot.screenHeight - wallpaper.height) / 2
                 readonly property real wallpaperTotalOffsetX: wallpaper.x - baseWallpaperOffsetX
                 readonly property real wallpaperTotalOffsetY: wallpaper.y - baseWallpaperOffsetY
                 readonly property bool locked: GlobalStates.screenLocked
@@ -257,10 +260,10 @@ Variants {
                 FadeLoader {
                     shown: Config.options.background.widgets.weather.enable
                     sourceComponent: WeatherWidget {
-                        screenWidth: bgRoot.screen.width
-                        screenHeight: bgRoot.screen.height
-                        scaledScreenWidth: bgRoot.screen.width
-                        scaledScreenHeight: bgRoot.screen.height
+                        screenWidth: bgRoot.screenWidth
+                        screenHeight: bgRoot.screenHeight
+                        scaledScreenWidth: bgRoot.screenWidth
+                        scaledScreenHeight: bgRoot.screenHeight
                         wallpaperScale: 1
                     }
                 }
@@ -268,10 +271,10 @@ Variants {
                 FadeLoader {
                     shown: Config.options.background.widgets.clock.enable
                     sourceComponent: ClockWidget {
-                        screenWidth: bgRoot.screen.width
-                        screenHeight: bgRoot.screen.height
-                        scaledScreenWidth: bgRoot.screen.width
-                        scaledScreenHeight: bgRoot.screen.height
+                        screenWidth: bgRoot.screenWidth
+                        screenHeight: bgRoot.screenHeight
+                        scaledScreenWidth: bgRoot.screenWidth
+                        scaledScreenHeight: bgRoot.screenHeight
                         wallpaperScale: 1
                         wallpaperSafetyTriggered: bgRoot.wallpaperSafetyTriggered
                     }

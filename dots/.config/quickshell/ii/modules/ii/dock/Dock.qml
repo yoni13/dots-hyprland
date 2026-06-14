@@ -1,6 +1,7 @@
 import qs
 import qs.services
 import qs.modules.common
+import qs.modules.common.functions as CF
 import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Controls
@@ -18,7 +19,7 @@ Scope { // Scope
 
     Variants {
         // For each monitor
-        model: Quickshell.screens
+        model: CF.ScreenUtils.realScreens()
 
         PanelWindow {
             id: dockRoot

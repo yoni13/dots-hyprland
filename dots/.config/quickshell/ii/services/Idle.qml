@@ -58,9 +58,9 @@ Singleton {
         id: sleepInhibitor
         command: [
             "systemd-inhibit",
-            "--what=sleep:idle",
+            "--what=sleep:idle:handle-lid-switch",
             "--who=Quickshell",
-            "--why=Keep awake toggle is enabled",
+            "--why=Keep awake toggle is enabled, including laptop lid close",
             "--mode=block",
             "sleep",
             "infinity"

@@ -15,7 +15,7 @@ Scope {
     Loader {
         active: PolkitService.active
         sourceComponent: Variants {
-            model: Quickshell.screens
+            model: ScreenUtils.realScreens()
             delegate: PanelWindow {
                 id: panelWindow
                 required property var modelData

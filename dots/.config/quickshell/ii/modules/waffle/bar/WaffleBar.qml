@@ -6,6 +6,7 @@ import Quickshell.Hyprland
 import qs
 import qs.services
 import qs.modules.common
+import qs.modules.common.functions as CF
 import qs.modules.common.widgets
 
 Scope {
@@ -15,7 +16,7 @@ Scope {
         id: barLoader
         active: GlobalStates.barOpen
         component: Variants {
-            model: Quickshell.screens
+            model: CF.ScreenUtils.realScreens()
             delegate: PanelWindow { // Bar window
                 id: barRoot
                 required property var modelData

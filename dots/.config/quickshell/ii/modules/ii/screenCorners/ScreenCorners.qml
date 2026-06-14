@@ -1,5 +1,6 @@
 import qs
 import qs.modules.common
+import qs.modules.common.functions as CF
 import qs.modules.common.widgets
 import qs.services
 import QtQuick
@@ -23,7 +24,7 @@ Scope {
         id: cornerPanelWindow
         property var brightnessMonitor: Brightness.getMonitorForScreen(screen)
         property bool fullscreen
-        visible: screen != null && (Config.options.appearance.fakeScreenRounding === 1 || (Config.options.appearance.fakeScreenRounding === 2 && !fullscreen))
+        visible: Config.options.appearance.fakeScreenRounding === 1 || (Config.options.appearance.fakeScreenRounding === 2 && !fullscreen)
         property var corner
 
         exclusionMode: ExclusionMode.Ignore
@@ -137,7 +138,7 @@ Scope {
     }
 
     Variants {
-        model: Quickshell.screens.filter(screen => screen != null)
+        model: CF.ScreenUtils.realScreens()
 
         Scope {
             id: monitorScope

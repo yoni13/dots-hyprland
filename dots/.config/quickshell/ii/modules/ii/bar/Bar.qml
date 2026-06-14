@@ -8,6 +8,7 @@ import Quickshell.Hyprland
 import qs
 import qs.services
 import qs.modules.common
+import qs.modules.common.functions as CF
 import qs.modules.common.widgets
 
 Scope {
@@ -17,7 +18,7 @@ Scope {
     Variants {
         // For each monitor
         model: {
-            const screens = Quickshell.screens;
+            const screens = CF.ScreenUtils.realScreens();
             const list = Config.options.bar.screenList;
             if (!list || list.length === 0)
                 return screens;

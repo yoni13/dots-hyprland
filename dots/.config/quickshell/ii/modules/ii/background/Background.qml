@@ -20,7 +20,7 @@ import qs.modules.ii.background.widgets.weather
 
 Variants {
     id: root
-    model: Quickshell.screens.filter(screen => screen != null)
+    model: CF.ScreenUtils.realScreens()
 
     PanelWindow {
         id: bgRoot

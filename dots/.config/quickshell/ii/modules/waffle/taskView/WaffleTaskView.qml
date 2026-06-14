@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import qs
 import qs.services
 import qs.modules.common
+import qs.modules.common.functions as CF
 import qs.modules.common.widgets
 import Qt.labs.synchronizer
 import QtQuick
@@ -18,7 +19,7 @@ Scope {
 
     Variants {
         id: overviewVariants
-        model: Quickshell.screens
+        model: CF.ScreenUtils.realScreens()
 
         Loader {
             id: panelLoader

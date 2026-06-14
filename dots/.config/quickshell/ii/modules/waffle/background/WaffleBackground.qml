@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import qs
 import qs.services
 import qs.modules.common
+import qs.modules.common.functions as CF
 import qs.modules.common.widgets
 import qs.modules.common.widgets.widgetCanvas
 import QtQuick
@@ -19,7 +20,7 @@ import qs.modules.ii.background.widgets.weather
 
 Variants {
     id: root
-    model: Quickshell.screens
+    model: CF.ScreenUtils.realScreens()
 
     PanelWindow {
         id: panelRoot

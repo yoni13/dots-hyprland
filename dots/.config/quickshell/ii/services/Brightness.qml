@@ -19,7 +19,7 @@ Singleton {
     signal brightnessChanged()
 
     property var ddcMonitors: []
-    readonly property list<BrightnessMonitor> monitors: Quickshell.screens.map(screen => monitorComp.createObject(root, {
+    readonly property list<BrightnessMonitor> monitors: ScreenUtils.realScreens().map(screen => monitorComp.createObject(root, {
         screen
     }))
 
@@ -194,7 +194,7 @@ Singleton {
         return (6.600135 + 216.360356 * Math.pow(Math.E, -0.0811129189 * x)) / 100.0;
     }
     Variants {
-        model: Quickshell.screens
+        model: ScreenUtils.realScreens()
         Scope {
             id: screenScope
             required property var modelData

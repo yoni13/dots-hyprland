@@ -13,6 +13,7 @@ LockScreen {
 
     // Monitor name -> workspace id to restore on unlock (set when locking)
     property var savedWorkspaces: ({})
+    readonly property list<var> realScreens: ScreenUtils.realScreens()
 
     Timer {
         id: restoreTimer
@@ -20,8 +21,8 @@ LockScreen {
         repeat: false
         onTriggered: {
             var batch = ""
-            for (var j = 0; j < Quickshell.screens.length; ++j) {
-                var monName = Quickshell.screens[j].name
+            for (var j = 0; j < root.realScreens.length; ++j) {
+                var monName = root.realScreens[j].name
                 var wsId = root.savedWorkspaces[monName]
                 if (wsId !== undefined) {
                     batch += `hyprctl dispatch 'hl.dsp.focus({monitor="${monName}"})'; hyprctl dispatch 'hl.dsp.focus({workspace=${wsId}})';`
@@ -45,8 +46,8 @@ LockScreen {
                 // Lock: save workspace per monitor and move all to temp workspace in one batch
                 var next = {}
                 var batch = "keyword animation workspaces,1,7,menu_decel,slidevert; "
-                for (var i = 0; i < Quickshell.screens.length; ++i) {
-                    var mon = Quickshell.screens[i].name
+                for (var i = 0; i < root.realScreens.length; ++i) {
+                    var mon = root.realScreens[i].name
                     var mData = HyprlandData.monitors.find(m => m.name === mon)
                     if (mData?.activeWorkspace == undefined) {
                         return;
@@ -65,7 +66,7 @@ LockScreen {
 
     // Push everything down (visual only; workspace switch is in Connections above)
     Variants {
-        model: Quickshell.screens.filter(screen => screen != null)
+        model: root.realScreens
         delegate: Scope {
             required property var modelData
             property bool shouldPush: GlobalStates.screenLocked

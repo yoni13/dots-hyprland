@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import qs
 import qs.modules.common
+import qs.modules.common.functions as CF
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -17,7 +18,7 @@ Scope {
     property var selectionMode: RegionSelection.SelectionMode.RectCorners
     
     Variants {
-        model: Quickshell.screens
+        model: CF.ScreenUtils.realScreens()
         delegate: Loader {
             id: regionSelectorLoader
             required property var modelData

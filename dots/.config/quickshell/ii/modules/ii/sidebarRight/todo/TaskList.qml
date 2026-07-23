@@ -77,11 +77,18 @@ Item {
                         TodoItemActionButton {
                             Layout.fillWidth: false
                             onClicked: {
-                                if (!todoItem.modelData.done)
+                                if (todoItem.modelData.source === "google") {
+                                    if (!todoItem.modelData.done)
+                                        GoogleWorkspace.completeTask(todoItem.modelData.remoteTask);
+                                    else
+                                        GoogleWorkspace.reopenTask(todoItem.modelData.remoteTask);
+                                } else if (!todoItem.modelData.done) {
                                     Todo.markDone(todoItem.modelData.originalIndex);
-                                else
+                                } else {
                                     Todo.markUnfinished(todoItem.modelData.originalIndex);
+                                }
                             }
+                            enabled: todoItem.modelData.source !== "google" || !GoogleWorkspace.busy
                             contentItem: MaterialSymbol {
                                 anchors.centerIn: parent
                                 horizontalAlignment: Text.AlignHCenter
@@ -93,8 +100,12 @@ Item {
                         TodoItemActionButton {
                             Layout.fillWidth: false
                             onClicked: {
-                                Todo.deleteItem(todoItem.modelData.originalIndex);
+                                if (todoItem.modelData.source === "google")
+                                    GoogleWorkspace.deleteTask(todoItem.modelData.remoteTask);
+                                else
+                                    Todo.deleteItem(todoItem.modelData.originalIndex);
                             }
+                            enabled: todoItem.modelData.source !== "google" || !GoogleWorkspace.busy
                             contentItem: MaterialSymbol {
                                 anchors.centerIn: parent
                                 horizontalAlignment: Text.AlignHCenter

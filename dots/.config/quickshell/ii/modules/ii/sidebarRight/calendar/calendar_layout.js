@@ -62,52 +62,26 @@ function getDateInXMonthsTime(x) {
 
 function getCalendarLayout(dateObject, highlight) {
     if (!dateObject) dateObject = new Date();
-    const weekday = (dateObject.getDay() + 6) % 7; // MONDAY IS THE FIRST DAY OF THE WEEK
-    const day = dateObject.getDate();
-    const month = dateObject.getMonth() + 1;
+    const month = dateObject.getMonth();
     const year = dateObject.getFullYear();
-    const weekdayOfMonthFirst = (weekday + 35 - (day - 1)) % 7;
-    const daysInMonth = getMonthDays(month, year);
-    const daysInNextMonth = getNextMonthDays(month, year);
-    const daysInPrevMonth = getPrevMonthDays(month, year);
+    const today = new Date();
+    const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
+    const firstDate = new Date(year, month, 1 - firstWeekday);
+    const pad = value => String(value).padStart(2, "0");
+    const calendar = [...Array(6)].map(() => Array(7));
 
-    // Fill
-    var monthDiff = (weekdayOfMonthFirst == 0 ? 0 : -1);
-    var toFill, dim;
-    if (weekdayOfMonthFirst == 0) {
-        toFill = 1;
-        dim = daysInMonth;
-    }
-    else {
-        toFill = (daysInPrevMonth - (weekdayOfMonthFirst - 1));
-        dim = daysInPrevMonth;
-    }
-    var calendar = [...Array(6)].map(() => Array(7));
-    var i = 0, j = 0;
-    while (i < 6 && j < 7) {
-        calendar[i][j] = {
-            "day": toFill,
-            "today": ((toFill == day && monthDiff == 0 && highlight) ? 1 : (
-                monthDiff == 0 ? 0 : -1
-            ))
+    for (let index = 0; index < 42; index++) {
+        const date = new Date(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate() + index);
+        const inDisplayedMonth = date.getMonth() === month;
+        const isToday = highlight
+            && date.getFullYear() === today.getFullYear()
+            && date.getMonth() === today.getMonth()
+            && date.getDate() === today.getDate();
+        calendar[Math.floor(index / 7)][index % 7] = {
+            "day": date.getDate(),
+            "today": isToday ? 1 : (inDisplayedMonth ? 0 : -1),
+            "dateKey": `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
         };
-        // Increment
-        toFill++;
-        if (toFill > dim) { // Next month?
-            monthDiff++;
-            if (monthDiff == 0)
-                dim = daysInMonth;
-            else if (monthDiff == 1)
-                dim = daysInNextMonth;
-            toFill = 1;
-        }
-        // Next tile
-        j++;
-        if (j == 7) {
-            j = 0;
-            i++;
-        }
-
     }
     return calendar;
 }

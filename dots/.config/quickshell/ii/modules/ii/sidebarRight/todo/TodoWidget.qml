@@ -12,6 +12,17 @@ Item {
     property int dialogMargins: 20
     property int fabSize: 48
     property int fabMargins: 14
+    readonly property var localTasks: Todo.list.map((item, index) => Object.assign({}, item, {
+            "source": "local",
+            "originalIndex": index
+        }))
+    readonly property var googleTasks: !GoogleWorkspace.enabled ? [] : GoogleWorkspace.tasks.map(task => ({
+            "source": "google",
+            "content": task.title,
+            "done": task.status === "completed",
+            "remoteTask": task
+        }))
+    readonly property var allTasks: localTasks.concat(googleTasks)
 
     Keys.onPressed: (event) => {
         if ((event.key === Qt.Key_PageDown || event.key === Qt.Key_PageUp) && event.modifiers === Qt.NoModifier) {
@@ -65,17 +76,13 @@ Item {
                 listBottomPadding: root.fabSize + root.fabMargins * 2
                 emptyPlaceholderIcon: "check_circle"
                 emptyPlaceholderText: Translation.tr("Nothing here!")
-                taskList: Todo.list
-                    .map(function(item, i) { return Object.assign({}, item, {originalIndex: i}); })
-                    .filter(function(item) { return !item.done; })
+                taskList: root.allTasks.filter(item => !item.done)
             }
             TaskList {
                 listBottomPadding: root.fabSize + root.fabMargins * 2
                 emptyPlaceholderIcon: "checklist"
                 emptyPlaceholderText: Translation.tr("Finished tasks will go here")
-                taskList: Todo.list
-                    .map(function(item, i) { return Object.assign({}, item, {originalIndex: i}); })
-                    .filter(function(item) { return item.done; })
+                taskList: root.allTasks.filter(item => item.done)
             }
 
         }
@@ -144,7 +151,10 @@ Item {
 
             function addTask() {
                 if (todoInput.text.length > 0) {
-                    Todo.addTask(todoInput.text)
+                    if (GoogleWorkspace.enabled && GoogleWorkspace.connected)
+                        GoogleWorkspace.addTask(todoInput.text);
+                    else
+                        Todo.addTask(todoInput.text);
                     todoInput.text = ""
                     root.showAddDialog = false
                     tabBar.setCurrentIndex(0) // Show unfinished tasks

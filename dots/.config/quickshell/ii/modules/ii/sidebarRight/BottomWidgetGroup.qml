@@ -112,6 +112,7 @@ Rectangle {
 
         StyledText {
             property int remainingTasks: Todo.list.filter(task => !task.done).length
+                + (GoogleWorkspace.enabled ? GoogleWorkspace.tasks.filter(task => task.status !== "completed").length : 0)
             Layout.margins: 10
             Layout.leftMargin: 0
             // text: `${DateTime.collapsedCalendarFormat}   •   ${remainingTasks} task${remainingTasks > 1 ? "s" : ""}`

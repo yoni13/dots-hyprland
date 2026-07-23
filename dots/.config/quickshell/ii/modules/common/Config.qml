@@ -229,6 +229,12 @@ Singleton {
                 }
             }
 
+            property JsonObject googleWorkspace: JsonObject {
+                property bool enable: false
+                property string credentialsPath: ""
+                property int refreshInterval: 15
+            }
+
             property JsonObject bar: JsonObject {
                 property JsonObject autoHide: JsonObject {
                     property bool enable: false

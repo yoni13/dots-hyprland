@@ -6,6 +6,7 @@ import QtQuick
 import QtQuick.Layouts
 
 Item {
+    id: root
     // Layout.topMargin: 10
     anchors.topMargin: 10
     property int monthShift: 0
@@ -13,6 +14,10 @@ Item {
     property var calendarLayout: CalendarLayout.getCalendarLayout(viewingDate, monthShift === 0)
     width: calendarColumn.width
     implicitHeight: calendarColumn.height + 10 * 2
+
+    function eventsForDate(dateKey) {
+        return GoogleWorkspace.enabled ? GoogleWorkspace.events.filter(event => event.startDate === dateKey) : [];
+    }
 
     Keys.onPressed: (event) => {
         if ((event.key === Qt.Key_PageDown || event.key === Qt.Key_PageUp)
@@ -112,8 +117,13 @@ Item {
                 Repeater {
                     model: Array(7).fill(modelData)
                     delegate: CalendarDayButton {
-                        day: calendarLayout[modelData][index].day
-                        isToday: calendarLayout[modelData][index].today
+                        readonly property var dayData: calendarLayout[modelData][index]
+                        readonly property var dayEvents: root.eventsForDate(dayData.dateKey)
+                        day: dayData.day
+                        isToday: dayData.today
+                        hasEvents: dayEvents.length > 0
+                        eventColor: dayEvents[0]?.color || Appearance.colors.colTertiary
+                        eventSummary: dayEvents.map(event => event.title).join("\n")
                     }
                 }
             }

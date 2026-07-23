@@ -8,6 +8,88 @@ ContentPage {
     forceWidth: true
 
     ContentSection {
+        icon: "calendar_month"
+        title: Translation.tr("Google Tasks & Calendar")
+
+        ConfigSwitch {
+            buttonIcon: "sync"
+            text: Translation.tr("Enable Google integration")
+            checked: Config.options.googleWorkspace.enable
+            onCheckedChanged: {
+                Config.options.googleWorkspace.enable = checked;
+                if (checked && GoogleWorkspace.connected)
+                    GoogleWorkspace.refresh();
+
+            }
+        }
+
+        MaterialTextArea {
+            Layout.fillWidth: true
+            placeholderText: Translation.tr("Desktop OAuth client JSON path")
+            text: Config.options.googleWorkspace.credentialsPath
+            wrapMode: TextEdit.Wrap
+            onTextChanged: Config.options.googleWorkspace.credentialsPath = text.trim()
+        }
+
+        ConfigSpinBox {
+            icon: "av_timer"
+            text: Translation.tr("Sync interval (minutes)")
+            value: Config.options.googleWorkspace.refreshInterval
+            from: 5
+            to: 120
+            stepSize: 5
+            onValueChanged: Config.options.googleWorkspace.refreshInterval = value
+        }
+
+        ConfigRow {
+            RippleButtonWithIcon {
+                materialIcon: GoogleWorkspace.connected ? "account_circle" : "login"
+                mainText: GoogleWorkspace.connected ? Translation.tr("Reconnect") : Translation.tr("Connect Google")
+                enabled: !GoogleWorkspace.busy && Config.options.googleWorkspace.credentialsPath.length > 0
+                onClicked: GoogleWorkspace.connectAccount()
+            }
+
+            RippleButtonWithIcon {
+                materialIcon: "sync"
+                mainText: Translation.tr("Sync now")
+                enabled: GoogleWorkspace.connected && !GoogleWorkspace.busy
+                onClicked: GoogleWorkspace.refresh()
+            }
+
+            RippleButtonWithIcon {
+                materialIcon: "logout"
+                mainText: Translation.tr("Disconnect")
+                enabled: GoogleWorkspace.connected && !GoogleWorkspace.busy
+                onClicked: GoogleWorkspace.disconnectAccount()
+            }
+
+            RippleButtonWithIcon {
+                materialIcon: "open_in_new"
+                mainText: Translation.tr("Setup guide")
+                onClicked: Qt.openUrlExternally("https://developers.google.com/workspace/guides/create-credentials#desktop-app")
+            }
+
+        }
+
+        StyledText {
+            Layout.fillWidth: true
+            text: GoogleWorkspace.statusText
+            color: GoogleWorkspace.errorMessage ? Appearance.m3colors.m3error : Appearance.colors.colSubtext
+            wrapMode: Text.Wrap
+            font.pixelSize: Appearance.font.pixelSize.small
+        }
+
+        StyledText {
+            Layout.fillWidth: true
+            text: Translation.tr("Requires a Desktop OAuth client with the Google Tasks and Calendar APIs enabled. Tokens are stored in your OS keyring.")
+            color: Appearance.colors.colSubtext
+            wrapMode: Text.Wrap
+            font.pixelSize: Appearance.font.pixelSize.smaller
+        }
+
+    }
+
+    ContentSection {
         icon: "neurology"
         title: Translation.tr("AI")
 
@@ -22,6 +104,7 @@ ContentPage {
                 });
             }
         }
+
     }
 
     ContentSection {
@@ -39,6 +122,7 @@ ContentPage {
                 Config.options.musicRecognition.timeout = value;
             }
         }
+
         ConfigSpinBox {
             icon: "av_timer"
             text: Translation.tr("Polling interval (s)")
@@ -50,6 +134,7 @@ ContentPage {
                 Config.options.musicRecognition.interval = value;
             }
         }
+
     }
 
     ContentSection {
@@ -65,6 +150,7 @@ ContentPage {
                 Config.options.networking.userAgent = text;
             }
         }
+
     }
 
     ContentSection {
@@ -82,7 +168,7 @@ ContentPage {
                 Config.options.resources.updateInterval = value;
             }
         }
-        
+
     }
 
     ContentSection {
@@ -98,7 +184,7 @@ ContentPage {
                 Config.options.screenRecord.savePath = text;
             }
         }
-        
+
         MaterialTextArea {
             Layout.fillWidth: true
             placeholderText: Translation.tr("Screenshot Path (leave empty to just copy)")
@@ -108,6 +194,7 @@ ContentPage {
                 Config.options.screenSnip.savePath = text;
             }
         }
+
     }
 
     ContentSection {
@@ -120,15 +207,19 @@ ContentPage {
             onCheckedChanged: {
                 Config.options.search.sloppy = checked;
             }
+
             StyledToolTip {
                 text: Translation.tr("Could be better if you make a ton of typos,\nbut results can be weird and might not work with acronyms\n(e.g. \"GIMP\" might not give you the paint program)")
             }
+
         }
 
         ContentSubsection {
             title: Translation.tr("Prefixes")
+
             ConfigRow {
                 uniform: true
+
                 MaterialTextArea {
                     Layout.fillWidth: true
                     placeholderText: Translation.tr("Action")
@@ -138,6 +229,7 @@ ContentPage {
                         Config.options.search.prefix.action = text;
                     }
                 }
+
                 MaterialTextArea {
                     Layout.fillWidth: true
                     placeholderText: Translation.tr("Clipboard")
@@ -147,6 +239,7 @@ ContentPage {
                         Config.options.search.prefix.clipboard = text;
                     }
                 }
+
                 MaterialTextArea {
                     Layout.fillWidth: true
                     placeholderText: Translation.tr("Emojis")
@@ -156,10 +249,12 @@ ContentPage {
                         Config.options.search.prefix.emojis = text;
                     }
                 }
+
             }
 
             ConfigRow {
                 uniform: true
+
                 MaterialTextArea {
                     Layout.fillWidth: true
                     placeholderText: Translation.tr("Math")
@@ -169,6 +264,7 @@ ContentPage {
                         Config.options.search.prefix.math = text;
                     }
                 }
+
                 MaterialTextArea {
                     Layout.fillWidth: true
                     placeholderText: Translation.tr("Shell command")
@@ -178,6 +274,7 @@ ContentPage {
                         Config.options.search.prefix.shellCommand = text;
                     }
                 }
+
                 MaterialTextArea {
                     Layout.fillWidth: true
                     placeholderText: Translation.tr("Web search")
@@ -187,10 +284,14 @@ ContentPage {
                         Config.options.search.prefix.webSearch = text;
                     }
                 }
+
             }
+
         }
+
         ContentSubsection {
             title: Translation.tr("Web search")
+
             MaterialTextArea {
                 Layout.fillWidth: true
                 placeholderText: Translation.tr("Base URL")
@@ -200,7 +301,9 @@ ContentPage {
                     Config.options.search.engineBaseUrl = text;
                 }
             }
+
         }
+
     }
 
     // There's no update indicator in ii for now so we shouldn't show this yet
@@ -232,6 +335,7 @@ ContentPage {
     ContentSection {
         icon: "weather_mix"
         title: Translation.tr("Weather")
+
         ConfigRow {
             ConfigSwitch {
                 buttonIcon: "assistant_navigation"
@@ -241,6 +345,7 @@ ContentPage {
                     Config.options.bar.weather.enableGPS = checked;
                 }
             }
+
             ConfigSwitch {
                 buttonIcon: "thermometer"
                 text: Translation.tr("Fahrenheit unit")
@@ -248,12 +353,15 @@ ContentPage {
                 onCheckedChanged: {
                     Config.options.bar.weather.useUSCS = checked;
                 }
+
                 StyledToolTip {
                     text: Translation.tr("It may take a few seconds to update")
                 }
+
             }
+
         }
-        
+
         MaterialTextArea {
             Layout.fillWidth: true
             placeholderText: Translation.tr("City name")
@@ -263,6 +371,7 @@ ContentPage {
                 Config.options.bar.weather.city = text;
             }
         }
+
         ConfigSpinBox {
             icon: "av_timer"
             text: Translation.tr("Polling interval (m)")
@@ -274,5 +383,7 @@ ContentPage {
                 Config.options.bar.weather.fetchInterval = value;
             }
         }
+
     }
+
 }

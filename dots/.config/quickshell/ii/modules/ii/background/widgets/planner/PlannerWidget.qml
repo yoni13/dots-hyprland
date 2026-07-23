@@ -21,11 +21,27 @@ AbstractBackgroundWidget {
     property date today: new Date()
     property date displayedMonth: new Date(today.getFullYear(), today.getMonth(), 1)
     property date selectedDate: today
-    readonly property var pendingTasks: Todo.list.map((task, index) => ({
+    readonly property var localPendingTasks: Todo.list.map((task, index) => ({
+            "kind": "task",
+            "source": "local",
             "content": task.content,
             "done": task.done,
             "originalIndex": index
         })).filter(task => !task.done)
+    readonly property var googlePendingTasks: !GoogleWorkspace.enabled ? [] : GoogleWorkspace.tasks.map(task => ({
+            "kind": "task",
+            "source": "google",
+            "content": task.title,
+            "remoteTask": task
+        })).filter(task => task.remoteTask.status !== "completed")
+    readonly property var pendingTasks: localPendingTasks.concat(googlePendingTasks)
+    readonly property var selectedEvents: eventsForDate(selectedDate).map(event => ({
+            "kind": "event",
+            "source": "google",
+            "content": event.title,
+            "event": event
+        }))
+    readonly property var agendaItems: selectedEvents.concat(pendingTasks)
 
     function shiftMonth(offset) {
         displayedMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() + offset, 1);
@@ -42,11 +58,44 @@ AbstractBackgroundWidget {
             && first.getDate() === second.getDate();
     }
 
+    function dateKey(date) {
+        const pad = value => String(value).padStart(2, "0");
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+
+    function eventsForDate(date) {
+        const key = dateKey(date);
+        return GoogleWorkspace.enabled ? GoogleWorkspace.events.filter(event => event.startDate === key) : [];
+    }
+
+    function eventTime(event) {
+        if (event.allDay)
+            return Translation.tr("All day");
+        return new Date(event.start).toLocaleTimeString(Qt.locale(), "HH:mm");
+    }
+
+    function completeTask(task) {
+        if (task.source === "google")
+            GoogleWorkspace.completeTask(task.remoteTask);
+        else
+            Todo.markDone(task.originalIndex);
+    }
+
+    function deleteTask(task) {
+        if (task.source === "google")
+            GoogleWorkspace.deleteTask(task.remoteTask);
+        else
+            Todo.deleteItem(task.originalIndex);
+    }
+
     function addTask() {
         const content = taskInput.text.trim();
         if (content.length === 0)
             return;
-        Todo.addTask(content);
+        if (GoogleWorkspace.enabled && GoogleWorkspace.connected)
+            GoogleWorkspace.addTask(content);
+        else
+            Todo.addTask(content);
         taskInput.clear();
     }
 
@@ -141,6 +190,7 @@ AbstractBackgroundWidget {
                             readonly property bool inDisplayedMonth: dateValue.getMonth() === root.displayedMonth.getMonth()
                             readonly property bool isToday: root.sameDay(dateValue, root.today)
                             readonly property bool isSelected: root.sameDay(dateValue, root.selectedDate)
+                            readonly property var dayEvents: root.eventsForDate(dateValue)
 
                             Layout.preferredWidth: 40
                             Layout.preferredHeight: 40
@@ -170,7 +220,7 @@ AbstractBackgroundWidget {
                             }
 
                             Rectangle {
-                                visible: dayButton.isToday && !dayButton.isSelected
+                                visible: dayButton.isToday && !dayButton.isSelected && dayButton.dayEvents.length === 0
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 anchors.bottom: parent.bottom
                                 anchors.bottomMargin: 4
@@ -178,6 +228,18 @@ AbstractBackgroundWidget {
                                 height: 4
                                 radius: 2
                                 color: Appearance.colors.colPrimary
+                            }
+
+                            Rectangle {
+                                visible: dayButton.dayEvents.length > 0
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.bottom: parent.bottom
+                                anchors.bottomMargin: 3
+                                width: dayButton.dayEvents.length > 1 ? 10 : 5
+                                height: 5
+                                radius: 3
+                                color: dayButton.isSelected ? Appearance.colors.colOnPrimary
+                                    : dayButton.dayEvents[0]?.color || Appearance.colors.colTertiary
                             }
                         }
                     }
@@ -241,7 +303,7 @@ AbstractBackgroundWidget {
                         anchors.top: parent.top
                         spacing: 0
                         StyledText {
-                            text: Translation.tr("Things to do")
+                            text: Translation.tr("Agenda")
                             color: Appearance.colors.colOnLayer1
                             font.pixelSize: Appearance.font.pixelSize.title
                             font.weight: Font.DemiBold
@@ -279,7 +341,7 @@ AbstractBackgroundWidget {
                         spacing: 6
                         clip: true
                         model: ScriptModel {
-                            values: root.pendingTasks
+                            values: root.agendaItems
                         }
                         delegate: Rectangle {
                             id: taskDelegate
@@ -296,14 +358,26 @@ AbstractBackgroundWidget {
                                 spacing: 2
 
                                 PlannerIconButton {
-                                    iconName: "radio_button_unchecked"
+                                    visible: taskDelegate.modelData.kind === "task"
+                                    iconName: taskDelegate.modelData.source === "google" ? "add_task" : "radio_button_unchecked"
                                     accessibleName: Translation.tr("Mark task complete")
-                                    onClicked: Todo.markDone(taskDelegate.modelData.originalIndex)
+                                    enabled: taskDelegate.modelData.source !== "google" || !GoogleWorkspace.busy
+                                    onClicked: root.completeTask(taskDelegate.modelData)
+                                }
+                                MaterialSymbol {
+                                    visible: taskDelegate.modelData.kind === "event"
+                                    Layout.preferredWidth: 40
+                                    text: "event"
+                                    iconSize: 20
+                                    color: taskDelegate.modelData.event?.color || Appearance.colors.colTertiary
+                                    horizontalAlignment: Text.AlignHCenter
                                 }
                                 StyledText {
                                     id: taskText
                                     Layout.fillWidth: true
-                                    text: taskDelegate.modelData.content
+                                    text: taskDelegate.modelData.kind === "event"
+                                        ? `${root.eventTime(taskDelegate.modelData.event)}  ${taskDelegate.modelData.content}`
+                                        : taskDelegate.modelData.content
                                     color: Appearance.colors.colOnLayer2
                                     wrapMode: Text.Wrap
                                     maximumLineCount: 2
@@ -311,9 +385,11 @@ AbstractBackgroundWidget {
                                     font.pixelSize: Appearance.font.pixelSize.small
                                 }
                                 PlannerIconButton {
+                                    visible: taskDelegate.modelData.kind === "task"
                                     iconName: "close"
                                     accessibleName: Translation.tr("Delete task")
-                                    onClicked: Todo.deleteItem(taskDelegate.modelData.originalIndex)
+                                    enabled: taskDelegate.modelData.source !== "google" || !GoogleWorkspace.busy
+                                    onClicked: root.deleteTask(taskDelegate.modelData)
                                 }
                             }
                         }
@@ -331,7 +407,7 @@ AbstractBackgroundWidget {
                     }
 
                     ColumnLayout {
-                        visible: root.pendingTasks.length === 0
+                        visible: root.agendaItems.length === 0
                         anchors.centerIn: parent
                         spacing: 6
                         MaterialSymbol {

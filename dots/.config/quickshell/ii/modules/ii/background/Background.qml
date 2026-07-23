@@ -16,6 +16,7 @@ import Quickshell.Hyprland
 
 import qs.modules.ii.background.widgets
 import qs.modules.ii.background.widgets.clock
+import qs.modules.ii.background.widgets.planner
 import qs.modules.ii.background.widgets.weather
 
 Variants {
@@ -78,6 +79,7 @@ Variants {
         screen: modelData
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: (GlobalStates.screenLocked && !scaleAnim.running) ? WlrLayer.Overlay : WlrLayer.Bottom
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
         // WlrLayershell.layer: WlrLayer.Bottom
         WlrLayershell.namespace: "quickshell:background"
         anchors {
@@ -277,6 +279,17 @@ Variants {
                         scaledScreenHeight: bgRoot.screenHeight
                         wallpaperScale: 1
                         wallpaperSafetyTriggered: bgRoot.wallpaperSafetyTriggered
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.planner.enable
+                    sourceComponent: PlannerWidget {
+                        screenWidth: bgRoot.screenWidth
+                        screenHeight: bgRoot.screenHeight
+                        scaledScreenWidth: bgRoot.screenWidth
+                        scaledScreenHeight: bgRoot.screenHeight
+                        wallpaperScale: 1
                     }
                 }
             }

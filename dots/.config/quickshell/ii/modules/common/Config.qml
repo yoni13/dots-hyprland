@@ -209,6 +209,12 @@ Singleton {
                         property real x: 400
                         property real y: 100
                     }
+                    property JsonObject planner: JsonObject {
+                        property bool enable: true
+                        property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
+                        property real x: 80
+                        property real y: 120
+                    }
                 }
                 property string wallpaperPath: ""
                 property string thumbnailPath: ""

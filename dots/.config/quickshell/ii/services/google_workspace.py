@@ -34,12 +34,7 @@ def emit(payload: dict[str, Any]) -> None:
     print(json.dumps(payload, ensure_ascii=True), flush=True)
 
 
-def load_credentials(path: str) -> dict[str, str]:
-    try:
-        document = json.loads(Path(path).expanduser().read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise WorkspaceError(f"Could not read OAuth credentials: {error}") from error
-
+def normalize_credentials(document: dict[str, Any]) -> dict[str, str]:
     credentials = document.get("installed") or document.get("web") or document
     client_id = credentials.get("client_id")
     client_secret = credentials.get("client_secret")
@@ -51,6 +46,16 @@ def load_credentials(path: str) -> dict[str, str]:
         "auth_uri": credentials.get("auth_uri", "https://accounts.google.com/o/oauth2/v2/auth"),
         "token_uri": credentials.get("token_uri", "https://oauth2.googleapis.com/token"),
     }
+
+
+def load_credentials(path: str) -> dict[str, str]:
+    try:
+        document = json.loads(Path(path).expanduser().read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise WorkspaceError(f"Could not read OAuth credentials: {error}") from error
+    if not isinstance(document, dict):
+        raise WorkspaceError("OAuth credentials must be a JSON object")
+    return normalize_credentials(document)
 
 
 def request_json(
@@ -330,16 +335,30 @@ def authorize(credentials: dict[str, str]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("operation", choices=("auth", "sync", "add-task", "complete-task", "reopen-task", "delete-task"))
-    parser.add_argument("--credentials", required=True, help="Path to a Google Desktop OAuth client JSON file")
+    parser.add_argument("operation", choices=("import-credentials", "auth", "sync", "add-task", "complete-task", "reopen-task", "delete-task"))
+    parser.add_argument("--credentials", help="Path used only when importing a Google Desktop OAuth client JSON file")
     args = parser.parse_args()
 
     try:
-        credentials = load_credentials(args.credentials)
+        if args.operation == "import-credentials":
+            if not args.credentials:
+                raise WorkspaceError("A credential file path is required for import")
+            source_path = Path(args.credentials).expanduser().resolve()
+            emit({
+                "type": "credentials_imported",
+                "credentials": load_credentials(str(source_path)),
+                "sourcePath": str(source_path),
+            })
+            return 0
+
+        payload = read_payload()
+        credential_document = payload.get("credentials")
+        if not isinstance(credential_document, dict):
+            raise WorkspaceError("OAuth credentials are not available in secure storage")
+        credentials = normalize_credentials(credential_document)
         if args.operation == "auth":
             authorize(credentials)
         else:
-            payload = read_payload()
             if args.operation == "sync":
                 sync_workspace(credentials, payload)
             else:

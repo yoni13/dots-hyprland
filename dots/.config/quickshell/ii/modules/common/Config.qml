@@ -232,6 +232,7 @@ Singleton {
             property JsonObject googleWorkspace: JsonObject {
                 property bool enable: false
                 property string credentialsPath: ""
+                property string pendingCredentialDeletionPath: ""
                 property int refreshInterval: 15
             }
 

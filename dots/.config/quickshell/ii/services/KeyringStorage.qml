@@ -16,6 +16,8 @@ Singleton {
     id: root
 
     signal dataChanged()
+    signal dataSaved()
+    signal dataSaveFailed()
 
     property bool loaded: false
     property var keyringData: ({})
@@ -87,6 +89,12 @@ Singleton {
                 root.dataChanged()
                 stdinEnabled = false // End input stream
             }
+        }
+        onExited: (exitCode, _exitStatus) => {
+            if (exitCode === 0)
+                root.dataSaved();
+            else
+                root.dataSaveFailed();
         }
     }
 

@@ -5,7 +5,19 @@ import qs.modules.common
 import qs.modules.common.widgets
 
 ContentPage {
+    id: root
+
     forceWidth: true
+    property string googleCredentialsImportPath: Config.options.googleWorkspace.credentialsPath
+
+    Connections {
+        target: GoogleWorkspace
+
+        function onPendingCredentialDeletionPathChanged() {
+            if (GoogleWorkspace.pendingCredentialDeletionPath)
+                root.googleCredentialsImportPath = "";
+        }
+    }
 
     ContentSection {
         icon: "calendar_month"
@@ -26,9 +38,9 @@ ContentPage {
         MaterialTextArea {
             Layout.fillWidth: true
             placeholderText: Translation.tr("Desktop OAuth client JSON path")
-            text: Config.options.googleWorkspace.credentialsPath
+            text: root.googleCredentialsImportPath
             wrapMode: TextEdit.Wrap
-            onTextChanged: Config.options.googleWorkspace.credentialsPath = text.trim()
+            onTextChanged: root.googleCredentialsImportPath = text
         }
 
         ConfigSpinBox {
@@ -43,9 +55,16 @@ ContentPage {
 
         ConfigRow {
             RippleButtonWithIcon {
+                materialIcon: "key"
+                mainText: GoogleWorkspace.credentialsReady ? Translation.tr("Replace credentials") : Translation.tr("Import credentials")
+                enabled: !GoogleWorkspace.busy && root.googleCredentialsImportPath.trim().length > 0
+                onClicked: GoogleWorkspace.importCredentials(root.googleCredentialsImportPath)
+            }
+
+            RippleButtonWithIcon {
                 materialIcon: GoogleWorkspace.connected ? "account_circle" : "login"
                 mainText: GoogleWorkspace.connected ? Translation.tr("Reconnect") : Translation.tr("Connect Google")
-                enabled: !GoogleWorkspace.busy && Config.options.googleWorkspace.credentialsPath.length > 0
+                enabled: !GoogleWorkspace.busy && GoogleWorkspace.credentialsReady
                 onClicked: GoogleWorkspace.connectAccount()
             }
 
@@ -71,6 +90,43 @@ ContentPage {
 
         }
 
+        ContentSubsection {
+            visible: GoogleWorkspace.pendingCredentialDeletionPath.length > 0
+            title: Translation.tr("Delete the original credential file?")
+
+            StyledText {
+                Layout.fillWidth: true
+                text: Translation.tr("The OAuth credentials are now in your OS keyring. The original file is no longer needed:\n%1").arg(GoogleWorkspace.pendingCredentialDeletionPath)
+                color: Appearance.colors.colSubtext
+                wrapMode: Text.Wrap
+                font.pixelSize: Appearance.font.pixelSize.small
+            }
+
+            ConfigRow {
+                RippleButtonWithIcon {
+                    materialIcon: "delete"
+                    mainText: Translation.tr("Delete original file")
+                    enabled: !GoogleWorkspace.busy
+                    onClicked: GoogleWorkspace.deleteImportedCredentialsFile()
+                }
+                RippleButtonWithIcon {
+                    materialIcon: "keep"
+                    mainText: Translation.tr("Keep file")
+                    enabled: !GoogleWorkspace.busy
+                    onClicked: GoogleWorkspace.keepImportedCredentialsFile()
+                }
+            }
+        }
+
+        StyledText {
+            visible: GoogleWorkspace.credentialNotice.length > 0 && GoogleWorkspace.pendingCredentialDeletionPath.length === 0
+            Layout.fillWidth: true
+            text: GoogleWorkspace.credentialNotice
+            color: Appearance.colors.colSubtext
+            wrapMode: Text.Wrap
+            font.pixelSize: Appearance.font.pixelSize.small
+        }
+
         StyledText {
             Layout.fillWidth: true
             text: GoogleWorkspace.statusText
@@ -81,7 +137,7 @@ ContentPage {
 
         StyledText {
             Layout.fillWidth: true
-            text: Translation.tr("Requires a Desktop OAuth client with the Google Tasks and Calendar APIs enabled. Tokens are stored in your OS keyring.")
+            text: Translation.tr("Requires a Desktop OAuth client with the Google Tasks and Calendar APIs enabled. OAuth credentials and tokens are stored in your OS keyring.")
             color: Appearance.colors.colSubtext
             wrapMode: Text.Wrap
             font.pixelSize: Appearance.font.pixelSize.smaller

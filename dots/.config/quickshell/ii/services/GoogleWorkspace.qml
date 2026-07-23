@@ -13,13 +13,20 @@ Singleton {
     readonly property string helperPath: Quickshell.shellPath("services/google_workspace.py")
     readonly property bool enabled: Config.options?.googleWorkspace.enable ?? false
     readonly property string credentialsPath: Config.options?.googleWorkspace.credentialsPath ?? ""
+    readonly property bool credentialsReady: Object.keys(clientCredentials).length > 0
     readonly property bool connected: refreshToken.length > 0
-    readonly property bool busy: authorizing || syncing || apiProcess.running
+    readonly property bool busy: importingCredentials || awaitingCredentialSave || authorizing || syncing || apiProcess.running || deleteCredentialsFileProcess.running
 
     property string refreshToken: ""
+    property var clientCredentials: ({})
+    property bool importingCredentials: false
+    property bool awaitingCredentialSave: false
     property bool authorizing: false
     property bool syncing: false
     property string errorMessage: ""
+    property string credentialNotice: ""
+    property string pendingCredentialDeletionPath: Config.options?.googleWorkspace.pendingCredentialDeletionPath ?? ""
+    property string credentialImportPath: ""
     property string lastSync: ""
     property var tasks: []
     property var taskLists: []
@@ -31,6 +38,10 @@ Singleton {
     readonly property string statusText: {
         if (errorMessage)
             return errorMessage;
+        if (importingCredentials)
+            return Translation.tr("Importing OAuth credentials");
+        if (!credentialsReady)
+            return Translation.tr("Import a Desktop OAuth client JSON file");
         if (authorizing)
             return Translation.tr("Waiting for Google authorization");
         if (syncing)
@@ -51,27 +62,58 @@ Singleton {
             return;
         }
         const storedToken = KeyringStorage.keyringData?.googleWorkspace?.refreshToken ?? "";
+        const storedCredentials = KeyringStorage.keyringData?.googleWorkspace?.clientCredentials ?? {};
         const tokenChanged = storedToken !== root.refreshToken;
+        const credentialsChanged = JSON.stringify(storedCredentials) !== JSON.stringify(root.clientCredentials);
         root.refreshToken = storedToken;
+        root.clientCredentials = storedCredentials;
         if (!root.connected) {
             root.tasks = [];
             root.taskLists = [];
             root.events = [];
             root.calendars = [];
             root.lastSync = "";
-        } else if (root.enabled && root.credentialsPath && (tokenChanged || !root.lastSync)) {
+        } else if (root.enabled && root.credentialsReady && (tokenChanged || credentialsChanged || !root.lastSync)) {
             root.refresh();
         }
     }
 
-    function connectAccount() {
-        if (!root.credentialsPath) {
+    function importCredentials(path) {
+        const trimmedPath = path.trim();
+        if (!trimmedPath) {
             root.errorMessage = Translation.tr("Choose a Desktop OAuth client JSON file first");
             return;
         }
         root.errorMessage = "";
+        root.credentialNotice = "";
+        root.credentialImportPath = trimmedPath;
+        root.importingCredentials = true;
+        importCredentialsProcess.command = ["python3", root.helperPath, "import-credentials", "--credentials", trimmedPath];
+        importCredentialsProcess.running = true;
+    }
+
+    function deleteImportedCredentialsFile() {
+        if (!root.pendingCredentialDeletionPath || deleteCredentialsFileProcess.running)
+            return;
+        deleteCredentialsFileProcess.command = ["rm", "--", root.pendingCredentialDeletionPath];
+        deleteCredentialsFileProcess.running = true;
+    }
+
+    function keepImportedCredentialsFile() {
+        root.pendingCredentialDeletionPath = "";
+        Config.options.googleWorkspace.pendingCredentialDeletionPath = "";
+        root.credentialNotice = Translation.tr("OAuth credentials remain securely stored in the OS keyring");
+    }
+
+    function connectAccount() {
+        if (!root.credentialsReady) {
+            root.errorMessage = Translation.tr("Import OAuth credentials first");
+            return;
+        }
+        root.errorMessage = "";
         root.authorizing = true;
-        authProcess.command = ["python3", root.helperPath, "auth", "--credentials", root.credentialsPath];
+        authProcess.command = ["python3", root.helperPath, "auth"];
+        authProcess.stdinEnabled = true;
         authProcess.running = true;
     }
 
@@ -87,13 +129,16 @@ Singleton {
     }
 
     function runApi(operation, payload) {
-        if (apiProcess.running || !root.connected || !root.credentialsPath)
+        if (apiProcess.running || !root.connected || !root.credentialsReady)
             return;
         root.errorMessage = "";
         root.pendingOperation = operation;
-        root.pendingPayload = Object.assign({"refresh_token": root.refreshToken}, payload || {});
+        root.pendingPayload = Object.assign({
+            "refresh_token": root.refreshToken,
+            "credentials": root.clientCredentials
+        }, payload || {});
         root.syncing = operation === "sync";
-        apiProcess.command = ["python3", root.helperPath, operation, "--credentials", root.credentialsPath];
+        apiProcess.command = ["python3", root.helperPath, operation];
         apiProcess.stdinEnabled = true;
         apiProcess.running = true;
     }
@@ -139,6 +184,14 @@ Singleton {
             root.errorMessage = message.message || Translation.tr("Google integration failed");
             return;
         }
+        if (message.type === "credentials_imported") {
+            root.clientCredentials = message.credentials || {};
+            root.awaitingCredentialSave = true;
+            KeyringStorage.setNestedField(["googleWorkspace", "clientCredentials"], root.clientCredentials);
+            root.credentialImportPath = message.sourcePath || root.credentialImportPath;
+            root.errorMessage = "";
+            return;
+        }
         if (message.type === "authorization_url") {
             Qt.openUrlExternally(message.url);
             return;
@@ -176,6 +229,23 @@ Singleton {
         function onKeyringDataChanged() {
             root.loadKeyring();
         }
+
+        function onDataSaved() {
+            if (!root.awaitingCredentialSave)
+                return;
+            root.awaitingCredentialSave = false;
+            root.pendingCredentialDeletionPath = root.credentialImportPath;
+            Config.options.googleWorkspace.pendingCredentialDeletionPath = root.pendingCredentialDeletionPath;
+            root.credentialNotice = Translation.tr("Credentials imported securely. Delete the original JSON file?");
+            Config.options.googleWorkspace.credentialsPath = "";
+        }
+
+        function onDataSaveFailed() {
+            if (!root.awaitingCredentialSave)
+                return;
+            root.awaitingCredentialSave = false;
+            root.errorMessage = Translation.tr("Could not save OAuth credentials to the OS keyring");
+        }
     }
 
     Connections {
@@ -204,10 +274,43 @@ Singleton {
     }
 
     Process {
+        id: importCredentialsProcess
+
+        stdout: SplitParser {
+            onRead: data => root.handleMessage(data)
+        }
+        onExited: (exitCode, _exitStatus) => {
+            root.importingCredentials = false;
+            if (exitCode !== 0 && !root.errorMessage)
+                root.errorMessage = Translation.tr("Could not import OAuth credentials");
+        }
+    }
+
+    Process {
+        id: deleteCredentialsFileProcess
+
+        onExited: (exitCode, _exitStatus) => {
+            if (exitCode === 0) {
+                root.pendingCredentialDeletionPath = "";
+                Config.options.googleWorkspace.pendingCredentialDeletionPath = "";
+                root.credentialNotice = Translation.tr("Original OAuth credential file deleted");
+            } else {
+                root.errorMessage = Translation.tr("Could not delete the original OAuth credential file");
+            }
+        }
+    }
+
+    Process {
         id: authProcess
 
         stdout: SplitParser {
             onRead: data => root.handleMessage(data)
+        }
+        onRunningChanged: {
+            if (!authProcess.running)
+                return;
+            authProcess.write(JSON.stringify({"credentials": root.clientCredentials}));
+            authProcess.stdinEnabled = false;
         }
         onExited: (exitCode, _exitStatus) => {
             root.authorizing = false;

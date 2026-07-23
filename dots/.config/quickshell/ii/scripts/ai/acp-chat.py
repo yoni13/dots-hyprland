@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ACP (Agent Client Protocol) chat client for dots-hyprland.
 
-Connects to an ACP-compatible CLI agent (e.g. `gemini --acp`,
+Connects to an ACP-compatible CLI agent (e.g. `opencode acp`,
 `claude-agent-acp`), sends a conversation, and streams the agent's
 response back as NDJSON to stdout.
 
@@ -13,10 +13,10 @@ Output format (one JSON object per line to stdout):
   {"type": "error",     "message": "..."}       – fatal error
 
 Usage:
-  acp-chat.py --cmd '["gemini","--acp"]' \
+  acp-chat.py --cmd '["opencode","acp"]' \
               --messages '[{"role":"user","rawContent":"Hello"}]' \
               [--system "You are helpful."] \
-              [--model "gemini-2.5-pro"] \
+              [--model "opencode/mimo-v2.5-free"] \
               [--cwd "/tmp/acp-XXXXXX"]
 """
 

@@ -6,11 +6,11 @@ import qs.modules.common.functions as CF
  * API strategy for ACP (Agent Client Protocol) agents.
  *
  * Instead of issuing a curl request, this strategy spawns an ACP-compatible
- * CLI tool (e.g. `gemini --acp` or `claude-agent-acp`) via acp-chat.py and
+ * CLI tool (e.g. `opencode acp` or `claude-agent-acp`) via acp-chat.py and
  * streams text back through the existing Process/SplitParser pipeline.
  *
  * The model's `endpoint` field must be the shell command for the agent,
- * e.g. "gemini --acp" or "claude-agent-acp".
+ * e.g. "opencode acp" or "claude-agent-acp".
  *
  * Output from acp-chat.py is NDJSON; each line is one of:
  *   {"type":"text",     "text":"..."}

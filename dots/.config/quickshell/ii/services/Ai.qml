@@ -259,7 +259,7 @@ Singleton {
     // - key_id: The identifier of the API key. Use the same identifier for models that can be accessed with the same key.
     // - key_get_link: Link to get an API key
     // - key_get_description: Description of pricing and how to get an API key
-    // - api_format: The API format of the model. Can be "openai" or "gemini". Default is "openai".
+    // - api_format: The API format of the model. Can be "openai", "gemini", "mistral", or "acp". Default is "openai".
     // - extraParams: Extra parameters to be passed to the model. This is a JSON object.
     property var models: Config.options.policies.ai === 2 ? {} : {
         "gemini-2.5-flash": aiModelComponent.createObject(this, {
@@ -304,35 +304,13 @@ Singleton {
         // ── ACP (Agent Client Protocol) agents ────────────────────────────────
         // These run as local CLI subprocesses speaking JSON-RPC over stdin/stdout.
         // The `endpoint` field is the shell command used to launch the agent.
-        // Gemini CLI — model: "" uses whatever the CLI defaults to.
-        // Add variants with a real modelId to request a specific model via session/set_model.
-        "gemini-cli": aiModelComponent.createObject(this, {
-            "name": "Gemini CLI",
-            "icon": "google-gemini-symbolic",
-            "description": Translation.tr("ACP agent | Google Gemini CLI (default model)\nRequires: `npm i -g @google/gemini-cli` and `gemini auth login`"),
-            "homepage": "https://github.com/google-gemini/gemini-cli",
-            "endpoint": "gemini --acp",
-            "model": "",
-            "requires_key": false,
-            "api_format": "acp",
-        }),
-        "gemini-cli-flash": aiModelComponent.createObject(this, {
-            "name": "Gemini CLI — Flash",
-            "icon": "google-gemini-symbolic",
-            "description": Translation.tr("ACP agent | Google Gemini CLI · gemini-2.5-flash\nRequires: `npm i -g @google/gemini-cli` and `gemini auth login`"),
-            "homepage": "https://github.com/google-gemini/gemini-cli",
-            "endpoint": "gemini --acp",
-            "model": "gemini-2.5-flash",
-            "requires_key": false,
-            "api_format": "acp",
-        }),
-        "gemini-cli-pro": aiModelComponent.createObject(this, {
-            "name": "Gemini CLI — Pro",
-            "icon": "google-gemini-symbolic",
-            "description": Translation.tr("ACP agent | Google Gemini CLI · gemini-2.5-pro\nRequires: `npm i -g @google/gemini-cli` and `gemini auth login`"),
-            "homepage": "https://github.com/google-gemini/gemini-cli",
-            "endpoint": "gemini --acp",
-            "model": "gemini-2.5-pro",
+        "opencode-mimo-v2.5-free": aiModelComponent.createObject(this, {
+            "name": "OpenCode — MiMo v2.5 Free",
+            "icon": "terminal-symbolic",
+            "description": Translation.tr("ACP agent | OpenCode · opencode/mimo-v2.5-free\nRequires: OpenCode installed and authenticated"),
+            "homepage": "https://opencode.ai",
+            "endpoint": "opencode acp",
+            "model": "opencode/mimo-v2.5-free",
             "requires_key": false,
             "api_format": "acp",
         }),
@@ -380,7 +358,10 @@ Singleton {
         }),
     }
     property var modelList: Object.keys(root.models)
-    property var currentModelId: Persistent.states?.ai?.model || modelList[0]
+    readonly property string preferredAcpModelId: "opencode-mimo-v2.5-free"
+    property var currentModelId: root.models[Persistent.states?.ai?.model]
+        ? Persistent.states.ai.model
+        : (root.models[preferredAcpModelId] ? preferredAcpModelId : modelList[0])
 
     property var apiStrategies: {
         "openai": openaiApiStrategy.createObject(this),
@@ -409,6 +390,8 @@ Singleton {
     property string pendingFilePath: ""
 
     Component.onCompleted: {
+        if (Persistent.states?.ai?.model !== currentModelId)
+            Persistent.states.ai.model = currentModelId;
         setModel(currentModelId, false, false); // Do necessary setup for model
         root.addUserModels() // Config onReadyChanged above might not fire if config is loaded before this service
     }

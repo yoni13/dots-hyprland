@@ -22,8 +22,10 @@ Usage:
 
 from __future__ import annotations
 import argparse
+import base64
 import json
 import os
+from pathlib import Path
 import signal
 import subprocess
 import sys
@@ -32,7 +34,7 @@ import sys
 def main() -> None:
     parser = argparse.ArgumentParser(description="ACP chat client")
     parser.add_argument("--cmd", required=True,
-                        help="Agent command as JSON array, e.g. '[\"gemini\",\"--acp\"]'")
+                        help="Agent command as JSON array, e.g. '[\"opencode\",\"acp\"]'")
     parser.add_argument("--messages", required=True,
                         help="Conversation as JSON array of {role, rawContent} objects")
     parser.add_argument("--system", default="",
@@ -40,6 +42,8 @@ def main() -> None:
     parser.add_argument("--model", default="",
                         help="Model ID to request via session/set_model after session creation "
                              "(empty = use the agent's default)")
+    parser.add_argument("--file", default="",
+                        help="Image file to attach to the latest user prompt")
     parser.add_argument("--cwd", default=os.getcwd(),
                         help="Working directory passed to the agent")
     args = parser.parse_args()
@@ -60,13 +64,19 @@ def main() -> None:
         sys.exit(1)
 
     prompt_parts = build_prompt(messages, args.system)
+    if args.file:
+        try:
+            prompt_parts.append(build_image_content(args.file))
+        except (OSError, ValueError) as exc:
+            emit({"type": "error", "message": f"Could not attach image: {exc}"})
+            sys.exit(1)
 
     try:
         proc = subprocess.Popen(
             agent_cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
+            stderr=None if os.environ.get("ACP_DEBUG") else subprocess.DEVNULL,
             bufsize=0,
         )
     except FileNotFoundError:
@@ -246,6 +256,29 @@ def build_prompt(messages: list[dict], system_prompt: str) -> list[dict]:
     return parts
 
 
+def build_image_content(file_path: str) -> dict:
+    """Read an image and return an ACP/MCP image content block."""
+    path = Path(file_path).expanduser()
+    if not path.is_file():
+        raise ValueError(f"file does not exist: {path}")
+    if path.stat().st_size > 20 * 1024 * 1024:
+        raise ValueError("image exceeds the 20 MiB attachment limit")
+
+    detected = subprocess.run(
+        ["file", "-b", "--mime-type", str(path)],
+        check=False,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if not detected.startswith("image/"):
+        raise ValueError(f"unsupported MIME type: {detected or 'unknown'}")
+    return {
+        "type": "image",
+        "mimeType": detected,
+        "data": base64.b64encode(path.read_bytes()).decode("ascii"),
+    }
+
+
 def _handle_client_request(rid: str, method: str, params: dict, cwd: str,
                             respond, respond_error) -> None:
     """Handle a JSON-RPC request sent from the agent to the client."""
@@ -288,6 +321,8 @@ def _handle_client_request(rid: str, method: str, params: dict, cwd: str,
 
 def _handle_notification(method: str, params: dict) -> None:
     """Handle a JSON-RPC notification from the agent."""
+    if os.environ.get("ACP_DEBUG"):
+        print(json.dumps({"method": method, "params": params}), file=sys.stderr, flush=True)
     if method != "session/update":
         return
 

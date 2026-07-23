@@ -23,6 +23,7 @@ ApiStrategy {
     // State stored per-request and consumed in finalizeScriptContent / parseResponseLine
     property var acpMessages: []
     property string acpSystemPrompt: ""
+    property string acpFilePath: ""
     property var acpModel: null
     property bool acpInThinking: false
 
@@ -40,6 +41,7 @@ ApiStrategy {
             }
         });
         acpSystemPrompt = systemPrompt;
+        acpFilePath = filePath || "";
         acpModel = model;
         return {};
     }
@@ -66,6 +68,9 @@ ApiStrategy {
         const modelFlag = acpModel?.model
             ? " --model '" + CF.StringUtils.shellSingleQuoteEscape(acpModel.model) + "'"
             : "";
+        const fileFlag = acpFilePath
+            ? " --file '" + CF.StringUtils.shellSingleQuoteEscape(CF.FileUtils.trimFileProtocol(acpFilePath)) + "'"
+            : "";
 
         // Use mktemp so each session gets an isolated, random working directory.
         // The directory is removed once the agent exits.
@@ -77,6 +82,7 @@ ApiStrategy {
             + " --messages '" + msgsJson + "'"
             + " --system '" + sysText + "'"
             + modelFlag
+            + fileFlag
             + " --cwd \"$ACP_CWD\""
             + "\n";
     }
@@ -145,6 +151,7 @@ ApiStrategy {
         acpInThinking  = false;
         acpMessages    = [];
         acpSystemPrompt = "";
+        acpFilePath     = "";
         acpModel       = null;
     }
 }

@@ -119,6 +119,17 @@ AbstractBackgroundWidget {
                 Layout.fillHeight: true
                 spacing: 10
 
+                WheelHandler {
+                    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                    onWheel: event => {
+                        if (event.angleDelta.y > 0)
+                            root.shiftMonth(-1);
+                        else if (event.angleDelta.y < 0)
+                            root.shiftMonth(1);
+                        event.accepted = true;
+                    }
+                }
+
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 6

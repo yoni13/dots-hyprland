@@ -15,7 +15,7 @@ Item {
     property bool renderMarkdown: true
     property bool enableMouseSelection: false
     property var segmentContent: ({})
-    property var messageData: {}
+    property var messageData: null
     property bool done: true
     property bool completed: false
 
@@ -164,7 +164,12 @@ Item {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
+                    editing: root.editing
+                    renderMarkdown: root.renderMarkdown
+                    enableMouseSelection: root.enableMouseSelection
                     segmentContent: root.segmentContent
+                    messageData: root.messageData
+                    done: root.done
                 }
             }
         }

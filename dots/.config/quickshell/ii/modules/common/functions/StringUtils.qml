@@ -51,6 +51,7 @@ Singleton {
      * @returns {Array<{type: "text" | "think" | "code", content: string, lang?: string, completed?: boolean}>}
      */
     function splitMarkdownBlocks(markdown) {
+        markdown = String(markdown ?? "");
         const regex = /```(\w+)?\n([\s\S]*?)```|<think>([\s\S]*?)<\/think>/g;
         /**
          * @type {{type: "text" | "think" | "code"; content: string; lang: string | undefined; completed: boolean | undefined}[]}

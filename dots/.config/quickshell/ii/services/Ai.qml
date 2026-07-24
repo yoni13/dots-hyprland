@@ -388,6 +388,7 @@ Singleton {
 
     property string requestScriptFilePath: "/tmp/quickshell/ai/request.sh"
     property string pendingFilePath: ""
+    readonly property bool responseInProgress: requester.running
 
     Component.onCompleted: {
         if (Persistent.states?.ai?.model !== currentModelId)
@@ -680,19 +681,28 @@ Singleton {
         property list<string> baseCommand: ["bash"]
         property AiMessageData message
         property ApiStrategy currentStrategy
+        property bool cancellationRequested: false
 
-        function markDone() {
+        function markDone(): void {
+            if (!requester.message || requester.message.done)
+                return;
             requester.message.done = true;
-            if (root.postResponseHook) {
+            requester.message.thinking = false;
+            if (root.postResponseHook && !requester.cancellationRequested) {
                 root.postResponseHook();
                 root.postResponseHook = null; // Reset hook after use
+            } else if (requester.cancellationRequested) {
+                root.postResponseHook = null;
             }
             root.saveChat("lastSession")
             root.responseFinished()
         }
 
-        function makeRequest() {
+        function makeRequest(): void {
+            if (requester.running)
+                return;
             const model = models[currentModelId];
+            requester.cancellationRequested = false;
 
             // Fetch API keys if needed
             if (model?.requires_key && !KeyringStorage.loaded) KeyringStorage.fetchKeyringData();
@@ -752,7 +762,7 @@ Singleton {
 
             /* Create command string */
             let scriptRequestContent = ""
-            scriptRequestContent += `curl --no-buffer "${endpoint}"`
+            scriptRequestContent += `exec curl --no-buffer "${endpoint}"`
                 + ` ${headerString}`
                 + (authHeader ? ` ${authHeader}` : "")
                 + ` --data '${CF.StringUtils.shellSingleQuoteEscape(JSON.stringify(data))}'`
@@ -769,7 +779,7 @@ Singleton {
 
         stdout: SplitParser {
             onRead: data => {
-                if (data.length === 0) return;
+                if (data.length === 0 || requester.cancellationRequested) return;
                 if (requester.message.thinking) requester.message.thinking = false;
                 // console.log("[Ai] Raw response line: ", data);
 
@@ -812,11 +822,26 @@ Singleton {
             if (requester.message.content.includes("API key not valid")) {
                 root.addApiKeyAdvice(models[requester.message.model]);
             }
+            requester.cancellationRequested = false;
         }
     }
 
+    function stopResponse(): void {
+        if (!requester.running)
+            return;
+        requester.cancellationRequested = true;
+        if (requester.message && !requester.message.done) {
+            requester.currentStrategy.onRequestFinished(requester.message);
+            const stoppedText = `\n\n*${Translation.tr("Response stopped")}*`;
+            requester.message.content += stoppedText;
+            requester.message.rawContent += stoppedText;
+            requester.message.thinking = false;
+        }
+        requester.running = false;
+    }
+
     function sendUserMessage(message) {
-        if (message.length === 0) return;
+        if (message.length === 0 || requester.running) return;
         root.addMessage(message, "user");
         requester.makeRequest();
     }
@@ -826,6 +851,7 @@ Singleton {
     }
 
     function regenerate(messageIndex) {
+        if (requester.running) return;
         if (messageIndex < 0 || messageIndex >= messageIDs.length) return;
         const id = root.messageIDs[messageIndex];
         const message = root.messageByID[id];

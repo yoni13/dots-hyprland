@@ -32,7 +32,7 @@ ApiStrategy {
     }
 
     function buildRequestData(model: AiModel, messages, systemPrompt: string,
-                              temperature: real, tools: list<var>, filePath: string) {
+                              temperature: real, tools: list<var>, filePath: string): var {
         // Store what we need; the actual script is built in finalizeScriptContent.
         acpMessages = messages.map(function(m) {
             return {
@@ -77,7 +77,7 @@ ApiStrategy {
         return "#!/usr/bin/env bash\n"
             + "ACP_CWD=$(mktemp -d /tmp/acp-XXXXXX)\n"
             + "trap 'rm -rf \"$ACP_CWD\"' EXIT\n"
-            + "python3 '" + acpScript + "'"
+            + "exec python3 '" + acpScript + "'"
             + " --cmd '" + cmdJson + "'"
             + " --messages '" + msgsJson + "'"
             + " --system '" + sysText + "'"
@@ -87,7 +87,7 @@ ApiStrategy {
             + "\n";
     }
 
-    function parseResponseLine(line: string, message: AiMessageData) {
+    function parseResponseLine(line: string, message: AiMessageData): var {
         if (!line || !line.trim()) return {};
 
         try {
@@ -138,7 +138,7 @@ ApiStrategy {
         return {};
     }
 
-    function onRequestFinished(message: AiMessageData) {
+    function onRequestFinished(message: AiMessageData): var {
         if (acpInThinking) {
             acpInThinking = false;
             message.content    += "\n\n</think>\n\n";
@@ -147,7 +147,7 @@ ApiStrategy {
         return { finished: true };
     }
 
-    function reset() {
+    function reset(): void {
         acpInThinking  = false;
         acpMessages    = [];
         acpSystemPrompt = "";

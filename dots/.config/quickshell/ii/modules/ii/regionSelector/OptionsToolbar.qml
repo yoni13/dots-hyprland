@@ -29,9 +29,19 @@ Toolbar {
             {"icon": "activity_zone", "name": Translation.tr("Rect")},
             {"icon": "gesture", "name": Translation.tr("Circle")}
         ]
-        currentIndex: root.selectionMode === RegionSelection.SelectionMode.RectCorners ? 0 : 1
+        Component.onCompleted: currentIndex = root.selectionMode === RegionSelection.SelectionMode.RectCorners ? 0 : 1
         onCurrentIndexChanged: {
-            root.selectionMode = currentIndex === 0 ? RegionSelection.SelectionMode.RectCorners : RegionSelection.SelectionMode.Circle;
+            const mode = currentIndex === 0 ? RegionSelection.SelectionMode.RectCorners : RegionSelection.SelectionMode.Circle;
+            if (root.selectionMode !== mode)
+                root.selectionMode = mode;
+        }
+        Connections {
+            target: root
+            function onSelectionModeChanged(): void {
+                const index = root.selectionMode === RegionSelection.SelectionMode.RectCorners ? 0 : 1;
+                if (tabBar.currentIndex !== index)
+                    tabBar.currentIndex = index;
+            }
         }
     }
 }

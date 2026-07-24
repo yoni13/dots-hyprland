@@ -90,6 +90,8 @@ Item {
             }
         }
         onExited: (exitCode, exitStatus) => {
+            if (!root)
+                return;
             // Ensure "auto" is always the first language
             let langs = getLanguagesProc.bufferList
                 .filter(lang => lang.trim().length > 0 && lang !== "auto")

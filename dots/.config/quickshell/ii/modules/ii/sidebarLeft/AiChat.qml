@@ -386,9 +386,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                     required property var modelData
                     required property int index
                     messageIndex: index
-                    messageData: {
-                        Ai.messageByID[modelData];
-                    }
+                    messageData: Ai.messageByID[modelData] ?? null
                     messageInputField: root.inputField
                 }
             }
@@ -651,6 +649,8 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                                     // Insert newline
                                     messageInputField.insert(messageInputField.cursorPosition, "\n");
                                     event.accepted = true;
+                                } else if (Ai.responseInProgress) {
+                                    event.accepted = true;
                                 } else {
                                     // Accept text
                                     const inputText = messageInputField.text;
@@ -683,8 +683,11 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                                 }
                                 event.accepted = false; // No image, let text pasting proceed
                             } else if (event.key === Qt.Key_Escape) {
-                                // Esc to detach file
-                                if (Ai.pendingFilePath.length > 0) {
+                                if (Ai.responseInProgress) {
+                                    Ai.stopResponse();
+                                    event.accepted = true;
+                                } else if (Ai.pendingFilePath.length > 0) {
+                                    // Esc to detach file
                                     Ai.attachFile("");
                                     event.accepted = true;
                                 } else {
@@ -701,13 +704,17 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                     implicitWidth: 40
                     implicitHeight: 40
                     buttonRadius: Appearance.rounding.small
-                    enabled: messageInputField.text.length > 0
+                    enabled: Ai.responseInProgress || messageInputField.text.length > 0
                     toggled: enabled
 
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: sendButton.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                         onClicked: {
+                            if (Ai.responseInProgress) {
+                                Ai.stopResponse();
+                                return;
+                            }
                             const inputText = messageInputField.text;
                             root.handleInput(inputText);
                             messageInputField.clear();
@@ -719,7 +726,12 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                         horizontalAlignment: Text.AlignHCenter
                         iconSize: 22
                         color: sendButton.enabled ? Appearance.m3colors.m3onPrimary : Appearance.colors.colOnLayer2Disabled
-                        text: "arrow_upward"
+                        text: Ai.responseInProgress ? "stop" : "arrow_upward"
+                        animateChange: true
+                    }
+
+                    StyledToolTip {
+                        text: Ai.responseInProgress ? Translation.tr("Stop response") : Translation.tr("Send message")
                     }
                 }
             }
@@ -750,14 +762,14 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                     // Model indicator
                     icon: "api"
                     text: Ai.getModel().name
-                    tooltipText: Translation.tr("Current model: %1\nSet it with %2model MODEL").arg(Ai.getModel().name).arg(root.commandPrefix)
+                    tooltipText: Translation.tr("Current model: %1\nSet it with %2model MODEL").arg(Ai.getModel()?.name ?? "").arg(root?.commandPrefix ?? "/")
                 }
 
                 ApiInputBoxIndicator {
                     // Tool indicator
                     icon: "service_toolbox"
                     text: Ai.currentTool.charAt(0).toUpperCase() + Ai.currentTool.slice(1)
-                    tooltipText: Translation.tr("Current tool: %1\nSet it with %2tool TOOL").arg(Ai.currentTool).arg(root.commandPrefix)
+                    tooltipText: Translation.tr("Current tool: %1\nSet it with %2tool TOOL").arg(Ai.currentTool).arg(root?.commandPrefix ?? "/")
                 }
 
                 Item {

@@ -26,10 +26,10 @@ Singleton {
         })) ?? []
         property bool popup: false
         property bool isTransient: notification?.hints.transient ?? false
-        property string appIcon: notification?.appIcon ?? ""
+        property string appIcon: root.displayAppIcon(notification?.appIcon)
         property string appName: notification?.appName ?? ""
         property string body: notification?.body ?? ""
-        property string image: notification?.image ?? ""
+        property string image: root.displayImageSource(notification?.image)
         property string summary: notification?.summary ?? ""
         property double time
         property string urgency: notification?.urgency.toString() ?? "normal"
@@ -46,14 +46,26 @@ Singleton {
         return {
             "notificationId": notif.notificationId,
             "actions": notif.actions,
-            "appIcon": notif.appIcon,
+            "appIcon": persistentImageSource(notif.appIcon),
             "appName": notif.appName,
             "body": notif.body,
-            "image": notif.image,
+            "image": persistentImageSource(notif.image),
             "summary": notif.summary,
             "time": notif.time,
             "urgency": notif.urgency,
         }
+    }
+    function persistentImageSource(source): string {
+        const value = String(source ?? "");
+        return value.startsWith("image://qsimage/") || value === "gnome-lockscreen" || value === "image://icon/gnome-lockscreen" ? "" : value;
+    }
+    function displayImageSource(source): string {
+        const value = String(source ?? "");
+        return value === "gnome-lockscreen" || value === "image://icon/gnome-lockscreen" ? "" : value;
+    }
+    function displayAppIcon(source): string {
+        const value = persistentImageSource(source);
+        return value;
     }
     function notifToString(notif) {
         return JSON.stringify(notifToJSON(notif), null, 2);
@@ -67,6 +79,11 @@ Singleton {
             const index = root.list.findIndex((notif) => notif.notificationId === notificationId);
             const notifObject = root.list[index];
             print("[Notifications] Notification timer triggered for ID: " + notificationId + ", transient: " + notifObject?.isTransient);
+            if (!notifObject) {
+                destroy();
+                return;
+            }
+            notifObject.timer = null;
             if (notifObject.isTransient) root.discardNotification(notificationId);
             else root.timeoutNotification(notificationId);
             destroy()
@@ -194,6 +211,12 @@ Singleton {
         const index = root.list.findIndex((notif) => notif.notificationId === id);
         const notifServerIndex = notifServer.trackedNotifications.values.findIndex((notif) => notif.id + root.idOffset === id);
         if (index !== -1) {
+            const timer = root.list[index].timer;
+            root.list[index].timer = null;
+            if (timer) {
+                timer.stop();
+                timer.destroy();
+            }
             root.list.splice(index, 1);
             notifFileView.setText(stringifyList(root.list));
             triggerListChange()
@@ -216,7 +239,7 @@ Singleton {
 
     function cancelTimeout(id) {
         const index = root.list.findIndex((notif) => notif.notificationId === id);
-        if (root.list[index] != null)
+        if (root.list[index]?.timer)
             root.list[index].timer.stop();
     }
 
@@ -273,10 +296,10 @@ Singleton {
                 return notifComponent.createObject(root, {
                     "notificationId": notif.notificationId,
                     "actions": [], // Notification actions are meaningless if they're not tracked by the server or the sender is dead
-                    "appIcon": notif.appIcon,
+                    "appIcon": displayAppIcon(notif.appIcon),
                     "appName": notif.appName,
                     "body": notif.body,
-                    "image": notif.image,
+                    "image": persistentImageSource(notif.image),
                     "summary": notif.summary,
                     "time": notif.time,
                     "urgency": notif.urgency,
@@ -290,6 +313,7 @@ Singleton {
 
             console.log("[Notifications] File loaded")
             root.idOffset = maxId
+            notifFileView.setText(stringifyList(root.list));
             root.initDone()
         }
         onLoadFailed: (error) => {

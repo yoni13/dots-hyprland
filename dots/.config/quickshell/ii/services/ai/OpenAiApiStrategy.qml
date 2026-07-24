@@ -8,7 +8,7 @@ ApiStrategy {
         return model.endpoint;
     }
 
-    function buildRequestData(model: AiModel, messages, systemPrompt: string, temperature: real, tools: list<var>, filePath: string) {
+    function buildRequestData(model: AiModel, messages, systemPrompt: string, temperature: real, tools: list<var>, filePath: string): var {
         let baseData = {
             "model": model.model,
             "messages": [
@@ -31,7 +31,7 @@ ApiStrategy {
         return `-H "Authorization: Bearer \$\{${apiKeyEnvVarName}\}"`;
     }
 
-    function parseResponseLine(line, message) {
+    function parseResponseLine(line: string, message: AiMessageData): var {
         // Remove 'data: ' prefix if present and trim whitespace
         let cleanData = line.trim();
         if (cleanData.startsWith("data:")) {
@@ -108,12 +108,12 @@ ApiStrategy {
         return {};
     }
     
-    function onRequestFinished(message) {
+    function onRequestFinished(message: AiMessageData): var {
         // OpenAI format doesn't need special finish handling
         return {};
     }
     
-    function reset() {
+    function reset(): void {
         isReasoning = false;
     }
 

@@ -70,9 +70,9 @@ MaterialShape { // App icon
 
                 source: root.image
                 fillMode: Image.PreserveAspectCrop
-                cache: false
+                cache: true
                 antialiasing: true
-                asynchronous: true
+                asynchronous: !String(root.image).startsWith("image://qsimage/")
 
                 layer.enabled: true
                 layer.effect: OpacityMask {

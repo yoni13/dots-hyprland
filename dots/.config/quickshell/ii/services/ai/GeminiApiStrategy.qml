@@ -15,7 +15,7 @@ ApiStrategy {
         return result;
     }
 
-    function buildRequestData(model: AiModel, messages, systemPrompt: string, temperature: real, tools: list<var>, filePath: string) {
+    function buildRequestData(model: AiModel, messages, systemPrompt: string, temperature: real, tools: list<var>, filePath: string): var {
         let contents = messages.map(message => {
             // console.log("[AI] Building request data for message:", JSON.stringify(message, null, 2));
             const geminiApiRoleName = (message.role === "assistant") ? "model" : message.role;
@@ -83,7 +83,7 @@ ApiStrategy {
         return "";
     }
 
-    function parseResponseLine(line, message) {
+    function parseResponseLine(line: string, message: AiMessageData): var {
         if (line.startsWith("[")) {
             buffer += line.slice(1).trim();
         } else if (line === "]") {
@@ -97,7 +97,7 @@ ApiStrategy {
         return {};
     }
 
-    function parseBuffer(message) {
+    function parseBuffer(message: AiMessageData): var {
         // console.log("[Ai] Gemini buffer: ", buffer);
         let finished = false;
         try {
@@ -188,15 +188,15 @@ ApiStrategy {
         return { finished: finished };
     }
 
-    function onRequestFinished(message) {
+    function onRequestFinished(message: AiMessageData): var {
         return parseBuffer(message);
     }
     
-    function reset() {
+    function reset(): void {
         buffer = "";
     }
 
-    function buildScriptFileSetup(filePath) {
+    function buildScriptFileSetup(filePath: string): string {
         const trimmedFilePath = CF.FileUtils.trimFileProtocol(filePath);
         let content = ""
 

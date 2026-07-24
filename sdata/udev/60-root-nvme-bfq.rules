@@ -1,0 +1,2 @@
+# Keep the root Samsung NVMe on BFQ even if kernel device numbering changes.
+ACTION=="add|change", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", ENV{ID_SERIAL_SHORT}=="S73DNX0WC05056", ATTR{queue/scheduler}="bfq"

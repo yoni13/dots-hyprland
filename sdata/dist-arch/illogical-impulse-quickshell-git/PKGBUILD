@@ -1,4 +1,4 @@
-_commit='7511545ee20664e3b8b8d3322c0ffe7567c56f7a'
+_commit='897fcdaa991f16b4160b5a5ed32f41c8f317824d'
 # Useful links:
 # https://git.outfoxxed.me/quickshell/quickshell/commits/branch/master
 # https://aur.archlinux.org/packages/quickshell-git
@@ -7,8 +7,8 @@ groups=(illogical-impulse)
 _prefix='illogical-impulse'
 _pkgname=quickshell
 pkgname="$_prefix-$_pkgname-git"
-pkgver=0.1.0.r1
-pkgrel=9
+pkgver=0.3.0.r8
+pkgrel=1
 pkgdesc="$_pkgname-git pinned commit and extra deps for $_prefix"
 arch=(x86_64 aarch64)
 url='https://git.outfoxxed.me/quickshell/quickshell'
@@ -58,16 +58,9 @@ conflicts=("$_pkgname" "$_pkgname-git")
 
 _pkgsrc="$_pkgname"
 source=("$_pkgsrc::git+$url.git#commit=$_commit"
-  fix-session-lock-output-lifecycle.patch
   quickshell-check.hook)
 sha256sums=('SKIP'
-  '5a9668951bbd06747ad764536b7e8ecef930481ce6375e5c4dfe61293748079f'
   '8543e21aeaaa5441b73a679160e7601a957f16c433e8d6bd9257e80bd0e94083')
-
-prepare() {
-  cd "$_pkgname"
-  git apply ../fix-session-lock-output-lifecycle.patch
-}
 
 build() {
   cd "$_pkgname"

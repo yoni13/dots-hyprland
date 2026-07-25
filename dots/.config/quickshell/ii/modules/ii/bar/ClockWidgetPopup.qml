@@ -48,6 +48,12 @@ StyledPopup {
             value: root.formattedUptime
         }
 
+        StyledPopupValueRow {
+            icon: "timer"
+            label: Translation.tr("Active for:")
+            value: ActiveTime.formattedLong
+        }
+
         // Tasks
         Column {
             spacing: 0

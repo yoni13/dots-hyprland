@@ -21,6 +21,19 @@ is_qs_alive() {
   qs -c "$qs_config" list --json 2>/dev/null | jq -e 'length > 0' >/dev/null
 }
 
+restore_locked_session() {
+  local session_id="${XDG_SESSION_ID:-}"
+  [[ -n "$session_id" ]] || return 0
+  [[ "$(loginctl show-session "$session_id" -p LockedHint --value 2>/dev/null)" == "yes" ]] || return 0
+
+  log "start_qs: session remains locked; restoring lock UI"
+  if qs -c "$qs_config" ipc call lock activate >>"$log_file" 2>&1; then
+    log "start_qs: lock UI restoration requested"
+  else
+    log "start_qs: lock UI restoration failed"
+  fi
+}
+
 setup_ram_cache() {
   mkdir -p "$(dirname "$disk_cache")" "$ram_cache"
   chmod 700 "$ram_cache_root" "$ram_cache"
@@ -77,6 +90,7 @@ while true; do
       log "start_qs: IPC alive after attempt=$attempt; watching for early crash"
       sleep 8
       if kill -0 "$qs_pid" 2>/dev/null && is_qs_alive; then
+        restore_locked_session
         log "start_qs: qs stable after attempt=$attempt; supervising pid=$qs_pid"
         wait "$qs_pid"
         status=$?

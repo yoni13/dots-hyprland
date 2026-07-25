@@ -19,6 +19,13 @@ Item {
         anchors.centerIn: parent
         spacing: root.hasAmPm ? 6 : 0
 
+        MaterialSymbol {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: "schedule"
+            iconSize: Appearance.font.pixelSize.large
+            color: ActiveTime.needsBreak ? Appearance.colors.colError : Appearance.colors.colOnLayer1
+        }
+
         Column {
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: -4
@@ -45,6 +52,12 @@ Item {
             font.pixelSize: Appearance.font.pixelSize.smallest
             color: Appearance.colors.colOnLayer1
             text: DateTime.shortDate
+        }
+        StyledText {
+            anchors.horizontalCenter: parent.horizontalCenter
+            font.pixelSize: Appearance.font.pixelSize.smallest
+            color: ActiveTime.needsBreak ? Appearance.colors.colError : Appearance.colors.colOnLayer1
+            text: ActiveTime.formatted
         }
     }
 

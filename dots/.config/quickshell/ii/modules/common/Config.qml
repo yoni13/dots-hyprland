@@ -388,7 +388,7 @@ Singleton {
             }
 
             property JsonObject lock: JsonObject {
-                property bool useHyprlock: false
+                property bool useHyprlock: true
                 property bool launchOnStartup: false
                 property JsonObject blur: JsonObject {
                     property bool enable: true

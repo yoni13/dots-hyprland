@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import qs
 import qs.services
 import qs.modules.common
+import qs.modules.common.widgets
 import qs.modules.waffle.looks
 
 BarButton {
@@ -25,6 +26,13 @@ BarButton {
             id: contentLayout
             anchors.centerIn: parent
             spacing: 7
+
+            MaterialSymbol {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "schedule"
+                iconSize: 18
+                color: ActiveTime.needsBreak ? Looks.colors.danger : Looks.colors.fg
+            }
             
             Column {
                 anchors.verticalCenter: parent.verticalCenter
@@ -34,7 +42,8 @@ BarButton {
                 }
                 WText {
                     anchors.right: parent.right
-                    text: DateTime.date
+                    text: `${DateTime.date} • ${ActiveTime.formatted}`
+                    color: ActiveTime.needsBreak ? Looks.colors.danger : Looks.colors.fg
                 }
             }
             FluentIcon {

@@ -16,6 +16,12 @@ Item {
         anchors.centerIn: parent
         spacing: 4
 
+        MaterialSymbol {
+            text: "schedule"
+            iconSize: Appearance.font.pixelSize.large
+            color: ActiveTime.needsBreak ? Appearance.colors.colError : Appearance.colors.colOnLayer1
+        }
+
         StyledText {
             font.pixelSize: Appearance.font.pixelSize.large
             color: Appearance.colors.colOnLayer1
@@ -34,6 +40,18 @@ Item {
             font.pixelSize: Appearance.font.pixelSize.small
             color: Appearance.colors.colOnLayer1
             text: DateTime.longDate
+        }
+
+        StyledText {
+            font.pixelSize: Appearance.font.pixelSize.small
+            color: ActiveTime.needsBreak ? Appearance.colors.colError : Appearance.colors.colOnLayer1
+            text: "•"
+        }
+
+        StyledText {
+            font.pixelSize: Appearance.font.pixelSize.small
+            color: ActiveTime.needsBreak ? Appearance.colors.colError : Appearance.colors.colOnLayer1
+            text: ActiveTime.formatted
         }
     }
 

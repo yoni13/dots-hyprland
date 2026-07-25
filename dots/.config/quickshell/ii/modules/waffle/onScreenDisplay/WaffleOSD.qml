@@ -63,13 +63,18 @@ Scope {
         target: GlobalStates
 
         function onOsdBrightnessOpenChanged() {
-            if (GlobalStates.osdBrightnessOpen)
+            if (GlobalStates.osdBrightnessOpen && root.focusedScreen !== undefined)
                 panelLoader.active = true;
         }
         function onOsdVolumeOpenChanged() {
-            if (GlobalStates.osdVolumeOpen)
+            if (GlobalStates.osdVolumeOpen && root.focusedScreen !== undefined)
                 panelLoader.active = true;
         }
+    }
+
+    onFocusedScreenChanged: {
+        if (root.focusedScreen === undefined)
+            panelLoader.active = false;
     }
 
     // The actual thing
@@ -84,13 +89,7 @@ Scope {
         }
         sourceComponent: PanelWindow {
             id: panelWindow
-
-            Connections {
-                target: root
-                function onFocusedScreenChanged() {
-                    osdRoot.screen = root.focusedScreen;
-                }
-            }
+            screen: root.focusedScreen
 
             color: "transparent"
             exclusiveZone: 0

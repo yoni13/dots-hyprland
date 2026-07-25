@@ -83,6 +83,11 @@ Singleton {
                 property bool inhibit: false
             }
 
+            property JsonObject activeTime: JsonObject {
+                property real activeSince: 0
+                property bool reminderSent: false
+            }
+
             property JsonObject overlay: JsonObject {
                 property list<string> open: ["crosshair", "recorder", "volumeMixer", "resources"]
                 property JsonObject crosshair: JsonObject {

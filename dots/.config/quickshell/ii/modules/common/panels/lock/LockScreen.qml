@@ -14,6 +14,7 @@ Scope {
 
     required property Component lockSurface
     property alias context: lockContext
+    property bool initializationHandled: false
     property Component sessionLockSurface: WlSessionLockSurface {
         id: sessionLockSurface
         color: "transparent"
@@ -131,7 +132,8 @@ Scope {
     }
 
     function initIfReady() {
-        if (!Config.ready || !Persistent.ready) return;
+        if (root.initializationHandled || !Config.ready || !Persistent.ready) return;
+        root.initializationHandled = true;
         if (Config.options.lock.launchOnStartup && Persistent.isNewHyprlandInstance) {
             root.lock();
         } else {
@@ -141,13 +143,14 @@ Scope {
     Connections {
         target: Config
         function onReadyChanged() {
-            root.initIfReady();
+            Qt.callLater(root.initIfReady);
         }
     }
     Connections {
         target: Persistent
         function onReadyChanged() {
-            root.initIfReady();
+            Qt.callLater(root.initIfReady);
         }
     }
+    Component.onCompleted: Qt.callLater(root.initIfReady)
 }

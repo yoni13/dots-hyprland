@@ -56,6 +56,8 @@ Singleton {
         return Translation.tr("Connected");
     }
 
+    function load(): void {}
+
     function loadKeyring() {
         if (!KeyringStorage.loaded) {
             KeyringStorage.fetchKeyringData();

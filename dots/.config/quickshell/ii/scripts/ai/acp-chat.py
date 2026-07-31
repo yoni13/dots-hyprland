@@ -13,11 +13,8 @@ Output format (one JSON object per line to stdout):
   {"type": "error",     "message": "..."}       – fatal error
 
 Usage:
-  acp-chat.py --cmd '["opencode","acp"]' \
-              --messages '[{"role":"user","rawContent":"Hello"}]' \
-              [--system "You are helpful."] \
-              [--model "opencode/mimo-v2.5-free"] \
-              [--cwd "/tmp/acp-XXXXXX"]
+  printf '%s' '<request-json>' | acp-chat.py --request-stdin \
+              --cwd "/tmp/acp-XXXXXX"
 """
 
 from __future__ import annotations
@@ -33,9 +30,11 @@ import sys
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="ACP chat client")
-    parser.add_argument("--cmd", required=True,
+    parser.add_argument("--request-stdin", action="store_true",
+                        help="Read command, messages, system, model, and file as JSON from stdin")
+    parser.add_argument("--cmd",
                         help="Agent command as JSON array, e.g. '[\"opencode\",\"acp\"]'")
-    parser.add_argument("--messages", required=True,
+    parser.add_argument("--messages",
                         help="Conversation as JSON array of {role, rawContent} objects")
     parser.add_argument("--system", default="",
                         help="System prompt text")
@@ -49,9 +48,17 @@ def main() -> None:
     args = parser.parse_args()
 
     try:
-        agent_cmd: list[str] = json.loads(args.cmd)
-        messages: list[dict] = json.loads(args.messages)
-    except json.JSONDecodeError as exc:
+        if args.request_stdin:
+            request = json.load(sys.stdin)
+            agent_cmd = request.get("cmd")
+            messages = request.get("messages")
+            args.system = request.get("system", "")
+            args.model = request.get("model", "")
+            args.file = request.get("file", "")
+        else:
+            agent_cmd = json.loads(args.cmd or "null")
+            messages = json.loads(args.messages or "null")
+    except (json.JSONDecodeError, AttributeError) as exc:
         emit({"type": "error", "message": f"JSON parse error: {exc}"})
         sys.exit(1)
 
@@ -59,8 +66,13 @@ def main() -> None:
         emit({"type": "error", "message": "Invalid agent command (must be a non-empty JSON array)"})
         sys.exit(1)
 
-    if not messages:
+    if not isinstance(messages, list) or not messages:
         emit({"type": "error", "message": "No messages provided"})
+        sys.exit(1)
+
+    workspace = Path(args.cwd).resolve()
+    if not workspace.is_dir():
+        emit({"type": "error", "message": f"Invalid ACP workspace: {workspace}"})
         sys.exit(1)
 
     prompt_parts = build_prompt(messages, args.system)
@@ -72,12 +84,16 @@ def main() -> None:
             sys.exit(1)
 
     try:
+        agent_env = os.environ.copy()
+        agent_env.pop("API_KEY", None)
         proc = subprocess.Popen(
             agent_cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=None if os.environ.get("ACP_DEBUG") else subprocess.DEVNULL,
             bufsize=0,
+            cwd=workspace,
+            env=agent_env,
         )
     except FileNotFoundError:
         emit({"type": "error",
@@ -135,7 +151,8 @@ def main() -> None:
     state["init_id"] = send_request("initialize", {
         "protocolVersion": 1,
         "clientCapabilities": {
-            "fs": {"readTextFile": True, "writeTextFile": True},
+            "fs": {"readTextFile": False, "writeTextFile": False},
+            "terminal": False,
         },
     })
 
@@ -160,7 +177,7 @@ def main() -> None:
                 # Response to one of our outgoing requests
                 if msg_id == state["init_id"]:
                     state["new_session_id"] = send_request("session/new", {
-                        "cwd": args.cwd,
+                        "cwd": str(workspace),
                         "mcpServers": [],
                     })
                 elif msg_id == state["new_session_id"]:
@@ -206,7 +223,7 @@ def main() -> None:
             elif msg_id is not None and msg_method is not None:
                 # Agent is making a request to us (client-side method)
                 _handle_client_request(msg_id, msg_method, msg_params,
-                                       args.cwd, send_response, send_error_response)
+                                       send_response, send_error_response)
 
             elif msg_id is None and msg_method is not None:
                 # Notification from agent (no id)
@@ -279,44 +296,43 @@ def build_image_content(file_path: str) -> dict:
     }
 
 
-def _handle_client_request(rid: str, method: str, params: dict, cwd: str,
-                            respond, respond_error) -> None:
+def _handle_client_request(rid: str, method: str, params: dict,
+                           respond, respond_error) -> None:
     """Handle a JSON-RPC request sent from the agent to the client."""
     if method == "session/request_permission":
-        options   = params.get("options") or []
-        option_id = options[0].get("optionId", "allow_once") if options else "allow_once"
-        respond(rid, {"outcome": {"outcome": "selected", "optionId": option_id}})
+        options = params.get("options") or []
+        tool_call = params.get("toolCall") or {}
+        emit({
+            "type": "tool_call",
+            "name": tool_call.get("title", "Tool request"),
+            "status": "denied by policy",
+        })
+        reject = next(
+            (option for option in options if option.get("kind") == "reject_once"),
+            None,
+        ) or next(
+            (option for option in options if option.get("kind") == "reject_always"),
+            None,
+        )
+        if reject and reject.get("optionId"):
+            respond(rid, {
+                "outcome": {
+                    "outcome": "selected",
+                    "optionId": reject["optionId"],
+                }
+            })
+        else:
+            respond(rid, {"outcome": {"outcome": "cancelled"}})
 
-    elif method == "fs/read_text_file":
-        path = params.get("path", "")
-        if not os.path.isabs(path):
-            path = os.path.join(cwd, path)
-        try:
-            with open(path, encoding="utf-8", errors="replace") as fh:
-                respond(rid, {"content": fh.read()})
-        except Exception as exc:
-            respond_error(rid, -32000, str(exc))
-
-    elif method == "fs/write_text_file":
-        path    = params.get("path", "")
-        content = params.get("content", "")
-        if not os.path.isabs(path):
-            path = os.path.join(cwd, path)
-        try:
-            os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-            with open(path, "w", encoding="utf-8") as fh:
-                fh.write(content)
-            respond(rid, {})
-        except Exception as exc:
-            respond_error(rid, -32000, str(exc))
+    elif method in ("fs/read_text_file", "fs/write_text_file"):
+        respond_error(rid, -32601, "Client filesystem access is disabled")
 
     elif method == "elicitation/create":
         # Cancel any interactive elicitation requests
         respond(rid, {"action": "cancel"})
 
     else:
-        # Unknown client method — return empty success so the agent can continue
-        respond(rid, {})
+        respond_error(rid, -32601, f"Unsupported client method: {method}")
 
 
 def _handle_notification(method: str, params: dict) -> None:

@@ -22,16 +22,29 @@ IconImage {
     property string urlToLoad
 
     Process {
+        id: faviconFileCheck
+        command: ["test", "-f", root.faviconFilePath]
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode === 0) {
+                root.urlToLoad = root.faviconFilePath
+            } else {
+                faviconDownloadProcess.running = true
+            }
+        }
+    }
+
+    Process {
         id: faviconDownloadProcess
         running: false
-        command: ["bash", "-c", `[ -f ${faviconFilePath} ] || curl -s '${root.faviconUrl}' -o '${faviconFilePath}' -L -H 'User-Agent: ${downloadUserAgent}'`]
+        command: ["curl", "-sSL", root.faviconUrl, "-o", root.faviconFilePath,
+            "-H", `User-Agent: ${root.downloadUserAgent}`]
         onExited: (exitCode, exitStatus) => {
-            root.urlToLoad = root.faviconFilePath
+            if (exitCode === 0) root.urlToLoad = root.faviconFilePath
         }
     }
 
     Component.onCompleted: {
-        faviconDownloadProcess.running = true
+        faviconFileCheck.running = true
     }
 
     source: Qt.resolvedUrl(root.urlToLoad)

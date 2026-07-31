@@ -70,16 +70,29 @@ Item { // Player instance
         coverArtDownloader.artFilePath = root.artFilePath
         // Download
         root.downloaded = false
-        coverArtDownloader.running = true
+        coverArtFileCheck.running = true
+    }
+
+    Process {
+        id: coverArtFileCheck
+        property string artFilePath: root.artFilePath
+        command: ["test", "-f", artFilePath]
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode === 0) {
+                root.downloaded = true
+            } else {
+                coverArtDownloader.running = true
+            }
+        }
     }
 
     Process { // Cover art downloader
         id: coverArtDownloader
         property string targetFile: root.artUrl
         property string artFilePath: root.artFilePath
-        command: [ "bash", "-c", `[ -f ${artFilePath} ] || curl -4 -sSL '${targetFile}' -o '${artFilePath}'` ]
+        command: [ "curl", "-4", "-sSL", targetFile, "-o", artFilePath ]
         onExited: (exitCode, exitStatus) => {
-            root.downloaded = true
+            if (exitCode === 0) root.downloaded = true
         }
     }
 

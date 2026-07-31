@@ -1,0 +1,30 @@
+From: illogical-impulse <noreply@localhost>
+Subject: [PATCH] wayland/lock: destroy surfaces before removed outputs
+
+Qt emits screenRemoved while the disappearing QWaylandScreen and wl_output
+are still alive. Deferring WlSessionLockSurface deletion until the next event
+loop iteration lets Qt release that wl_output first, leaving the native lock
+surface attached to a stale protocol object.
+
+Destroy the wrapper synchronously in the screen-removal callback. Its
+destructor immediately destroys the QWindow's native Wayland resources while
+leaving deletion of the QQuickWindow object itself deferred.
+---
+ src/wayland/session_lock.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/wayland/session_lock.cpp b/src/wayland/session_lock.cpp
+index 1ae8d2e..1c94471 100644
+--- a/src/wayland/session_lock.cpp
++++ b/src/wayland/session_lock.cpp
+@@ -73,7 +73,7 @@ void WlSessionLock::updateSurfaces(bool show, WlSessionLock* old) {
+ 	for (auto& [screen, surface]: map) {
+ 		if (!screens.contains(screen)) {
+ 			this->surfaces.remove(screen);
+-			surface->deleteLater();
++			delete surface;
+ 		}
+ 	}
+ 
+-- 
+2.50.1

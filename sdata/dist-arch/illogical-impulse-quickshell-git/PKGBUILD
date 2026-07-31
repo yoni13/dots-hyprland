@@ -8,7 +8,7 @@ _prefix='illogical-impulse'
 _pkgname=quickshell
 pkgname="$_prefix-$_pkgname-git"
 pkgver=0.3.0.r8
-pkgrel=1
+pkgrel=2
 pkgdesc="$_pkgname-git pinned commit and extra deps for $_prefix"
 arch=(x86_64 aarch64)
 url='https://git.outfoxxed.me/quickshell/quickshell'
@@ -58,9 +58,16 @@ conflicts=("$_pkgname" "$_pkgname-git")
 
 _pkgsrc="$_pkgname"
 source=("$_pkgsrc::git+$url.git#commit=$_commit"
+  fix-session-lock-output-removal.patch
   quickshell-check.hook)
 sha256sums=('SKIP'
+  'a8f342823b477f50c79c163f98ea6ff8b91bbe8359e2eac00229de1b627b23e2'
   '8543e21aeaaa5441b73a679160e7601a957f16c433e8d6bd9257e80bd0e94083')
+
+prepare() {
+  cd "$_pkgname"
+  patch -Np1 -i "$srcdir/fix-session-lock-output-removal.patch"
+}
 
 build() {
   cd "$_pkgname"

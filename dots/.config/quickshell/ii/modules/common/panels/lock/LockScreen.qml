@@ -95,7 +95,8 @@ Scope {
 
     function lock() {
         if (Config.options.lock.useHyprlock) {
-            Quickshell.execDetached(["bash", "-c", "pidof hyprlock || hyprlock"]);
+            const configDir = FileUtils.trimFileProtocol(Directories.config);
+            Quickshell.execDetached([`${configDir}/hypr/hyprland/scripts/start_hyprlock_failsafe.sh`]);
             return;
         }
         GlobalStates.screenLocked = true;
@@ -103,6 +104,7 @@ Scope {
 
     IpcHandler {
         target: "lock"
+        readonly property bool secure: lock.secure
 
         function activate(): void {
             root.lock();

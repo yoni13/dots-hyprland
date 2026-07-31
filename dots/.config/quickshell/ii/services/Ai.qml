@@ -711,7 +711,9 @@ Singleton {
             requester.currentStrategy.reset(); // Reset strategy state
 
             /* Put API key in environment variable */
-            if (model.requires_key) requester.environment[`${root.apiKeyEnvVarName}`] = root.apiKeys ? (root.apiKeys[model.key_id] ?? "") : ""
+            requester.environment[`${root.apiKeyEnvVarName}`] = model.requires_key && root.apiKeys
+                ? (root.apiKeys[model.key_id] ?? "")
+                : ""
 
             /* Build endpoint, request data */
             const endpoint = root.currentApiStrategy.buildEndpoint(model);

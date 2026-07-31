@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MPRIS Media Session Test</title>
+  <style>
+    :root { color-scheme: dark; font: 16px system-ui, sans-serif; }
+    body { max-width: 42rem; margin: 3rem auto; padding: 0 1rem; background: #171717; color: #eee; }
+    button, input { box-sizing: border-box; padding: .65rem .8rem; border: 1px solid #555; border-radius: .4rem; background: #252525; color: inherit; }
+    button { cursor: pointer; }
+    button:hover { background: #333; }
+    label { display: block; margin: 1rem 0 .35rem; color: #bbb; }
+    input { width: 100%; }
+    .row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1rem; }
+    #status { min-height: 1.5em; color: #9f9; }
+    code { color: #fdc; }
+  </style>
+</head>
+<body>
+  <h1>MPRIS Media Session Test</h1>
+  <p>
+    Start the generated tone, then inspect your media controls. This uses the
+    browser Media Session API, which browser integration may expose as MPRIS.
+  </p>
+
+  <label for="title">Track title</label>
+  <input id="title" value="MPRIS metadata test">
+
+  <label for="artist">Artist</label>
+  <input id="artist" value="Local test page">
+
+  <label for="artUrl">Artwork URL</label>
+  <input id="artUrl" value="https://example.invalid/test.jpg">
+
+  <div class="row">
+    <button id="start">Start audio</button>
+    <button id="pause">Pause</button>
+    <button id="update">Update metadata</button>
+    <button id="safe">Use safe metadata</button>
+    <button id="payload">Use injection-test metadata</button>
+  </div>
+
+  <p id="status" role="status"></p>
+  <p>
+    The injection-test button only changes the published artwork metadata to
+    a harmless marker URL. If the desktop code is vulnerable, check whether
+    <code>/tmp/mpris-metadata-test</code> appears.
+  </p>
+
+  <audio id="audio" loop></audio>
+
+  <script>
+    const audio = document.querySelector("#audio");
+    const status = document.querySelector("#status");
+    let audioContext;
+    let oscillator;
+    let gain;
+
+    function makeSilentWav() {
+      const sampleRate = 8000;
+      const samples = sampleRate;
+      const buffer = new ArrayBuffer(44 + samples);
+      const view = new DataView(buffer);
+      const text = (offset, value) => [...value].forEach((char, index) => view.setUint8(offset + index, char.charCodeAt(0)));
+      text(0, "RIFF");
+      view.setUint32(4, 36 + samples, true);
+      text(8, "WAVEfmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate, true);
+      view.setUint16(32, 1, true);
+      view.setUint16(34, 8, true);
+      text(36, "data");
+      view.setUint32(40, samples, true);
+      for (let index = 0; index < samples; index++) view.setUint8(44 + index, 128);
+      return URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
+    }
+
+    function setStatus(text) {
+      status.textContent = text;
+    }
+
+    function updateMetadata() {
+      if (!("mediaSession" in navigator)) {
+        setStatus("This browser does not implement Media Session.");
+        return;
+      }
+
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: document.querySelector("#title").value,
+        artist: document.querySelector("#artist").value,
+        album: "MPRIS test",
+        artwork: [{
+          src: document.querySelector("#artUrl").value,
+          sizes: "512x512",
+          type: "image/jpeg"
+        }]
+      });
+      setStatus("Media Session metadata updated.");
+    }
+
+    async function startAudio() {
+      audioContext ??= new AudioContext();
+      await audioContext.resume();
+      if (!audio.src) audio.src = makeSilentWav();
+      if (!oscillator) {
+        oscillator = audioContext.createOscillator();
+        gain = audioContext.createGain();
+        oscillator.frequency.value = 220;
+        gain.gain.value = 0.04;
+        oscillator.connect(gain).connect(audioContext.destination);
+        oscillator.start();
+      }
+      audio.play().catch(() => {});
+      navigator.mediaSession && (navigator.mediaSession.playbackState = "playing");
+      updateMetadata();
+      setStatus("Audio active. Check the desktop media controls/MPRIS player list.");
+    }
+
+    function pauseAudio() {
+      audio.pause();
+      if (audioContext) audioContext.suspend();
+      navigator.mediaSession && (navigator.mediaSession.playbackState = "paused");
+      setStatus("Audio paused; metadata remains published.");
+    }
+
+    document.querySelector("#start").addEventListener("click", startAudio);
+    document.querySelector("#pause").addEventListener("click", pauseAudio);
+    document.querySelector("#update").addEventListener("click", updateMetadata);
+    document.querySelector("#safe").addEventListener("click", () => {
+      document.querySelector("#title").value = "MPRIS metadata test";
+      document.querySelector("#artist").value = "Local test page";
+      document.querySelector("#artUrl").value = "https://example.invalid/test.jpg";
+      updateMetadata();
+    });
+    document.querySelector("#payload").addEventListener("click", () => {
+      document.querySelector("#title").value = "MPRIS quote test";
+      document.querySelector("#artist").value = "Local test page";
+      document.querySelector("#artUrl").value = "https://example.invalid/art'; touch /tmp/mpris-metadata-test; #";
+      updateMetadata();
+      setStatus("Injection-test metadata published. Check /tmp/mpris-metadata-test.");
+    });
+
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.setActionHandler("play", startAudio);
+      navigator.mediaSession.setActionHandler("pause", pauseAudio);
+    }
+  </script>
+</body>
+</html>

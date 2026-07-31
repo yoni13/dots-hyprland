@@ -61,29 +61,22 @@ ApiStrategy {
 
         // Build the agent command array from the model's endpoint string
         const cmdWords = (acpModel?.endpoint || "").split(/\s+/).filter(function(s) { return s.length > 0; });
-        const cmdJson  = JSON.stringify(cmdWords);
-
-        const msgsJson  = CF.StringUtils.shellSingleQuoteEscape(JSON.stringify(acpMessages));
-        const sysText   = CF.StringUtils.shellSingleQuoteEscape(acpSystemPrompt);
-        const modelFlag = acpModel?.model
-            ? " --model '" + CF.StringUtils.shellSingleQuoteEscape(acpModel.model) + "'"
-            : "";
-        const fileFlag = acpFilePath
-            ? " --file '" + CF.StringUtils.shellSingleQuoteEscape(CF.FileUtils.trimFileProtocol(acpFilePath)) + "'"
-            : "";
+        const request = {
+            cmd: cmdWords,
+            messages: acpMessages,
+            system: acpSystemPrompt,
+            model: acpModel?.model || "",
+            file: acpFilePath ? CF.FileUtils.trimFileProtocol(acpFilePath) : "",
+        };
+        const requestJson = CF.StringUtils.shellSingleQuoteEscape(JSON.stringify(request));
 
         // Use mktemp so each session gets an isolated, random working directory.
         // The directory is removed once the agent exits.
         return "#!/usr/bin/env bash\n"
             + "ACP_CWD=$(mktemp -d /tmp/acp-XXXXXX)\n"
             + "trap 'rm -rf \"$ACP_CWD\"' EXIT\n"
-            + "exec python3 '" + acpScript + "'"
-            + " --cmd '" + cmdJson + "'"
-            + " --messages '" + msgsJson + "'"
-            + " --system '" + sysText + "'"
-            + modelFlag
-            + fileFlag
-            + " --cwd \"$ACP_CWD\""
+            + "printf '%s' '" + requestJson + "' | python3 '" + acpScript + "'"
+            + " --request-stdin --cwd \"$ACP_CWD\""
             + "\n";
     }
 

@@ -56,7 +56,9 @@ Singleton {
         return Translation.tr("Connected");
     }
 
-    function load(): void {}
+    function load(): void {
+        root.loadKeyring();
+    }
 
     function loadKeyring() {
         if (!KeyringStorage.loaded) {

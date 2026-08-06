@@ -19,6 +19,9 @@ import Quickshell.Hyprland
 ShellRoot {
     id: root
 
+    // Keep the Google integration alive even when its sidebar is lazy-loaded.
+    readonly property var googleWorkspace: GoogleWorkspace
+
     // Stuff for every panel family
     ReloadPopup {}
 

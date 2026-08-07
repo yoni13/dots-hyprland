@@ -11,13 +11,12 @@ fi
 # Prompt for password if not provided
 if [[ -z "${UNLOCK_PASSWORD}" ]]; then
     echo -n 'Login password: ' >&2
-    read -s UNLOCK_PASSWORD || return
+    read -s UNLOCK_PASSWORD || exit 1
 fi
 
-# Unlock
-killall -q -u "$(whoami)" gnome-keyring-daemon
-eval $(echo -n "${UNLOCK_PASSWORD}" \
-           | gnome-keyring-daemon --daemonize --login \
-           | sed -e 's/^/export /')
+# Unlock the existing systemd-managed daemon over D-Bus.
+python3 "${SCRIPT_DIR}/unlock.py"
+status=$?
 unset UNLOCK_PASSWORD
 echo '' >&2
+exit "$status"

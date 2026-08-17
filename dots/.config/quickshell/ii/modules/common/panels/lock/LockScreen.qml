@@ -15,6 +15,8 @@ Scope {
     required property Component lockSurface
     property alias context: lockContext
     property bool initializationHandled: false
+    readonly property string lockRecoveryMarker: Quickshell.env("QUICKSHELL_LOCK_RECOVERY_MARKER")
+        || `${Quickshell.env("XDG_RUNTIME_DIR") || "/tmp"}/quickshell-lock-active`
     property Component sessionLockSurface: WlSessionLockSurface {
         id: sessionLockSurface
         color: "transparent"
@@ -32,7 +34,10 @@ Scope {
     Process {
         id: unlockKeyringProc
         onExited: (exitCode, exitStatus) => {
-            KeyringStorage.fetchKeyringData();
+            if (exitCode === 0)
+                KeyringStorage.fetchKeyringData();
+            else
+                console.warn(`[LockScreen] Keyring unlock failed with exit code ${exitCode}`);
         }
     }
     function unlockKeyring() {
@@ -44,6 +49,12 @@ Scope {
         })
     }
 
+    function updateLockRecoveryMarker(locked) {
+        Quickshell.execDetached(locked
+            ? ["touch", root.lockRecoveryMarker]
+            : ["rm", "-f", "--", root.lockRecoveryMarker]);
+    }
+
     // This stores all the information shared between the lock surfaces on each screen.
     // https://github.com/quickshell-mirror/quickshell-examples/tree/master/lockscreen
     LockContext {
@@ -52,6 +63,7 @@ Scope {
         Connections {
             target: GlobalStates
             function onScreenLockedChanged() {
+                root.updateLockRecoveryMarker(GlobalStates.screenLocked);
                 if (GlobalStates.screenLocked) {
                     lockContext.reset();
                     lockContext.tryFingerUnlock();
@@ -154,5 +166,8 @@ Scope {
             Qt.callLater(root.initIfReady);
         }
     }
-    Component.onCompleted: Qt.callLater(root.initIfReady)
+    Component.onCompleted: {
+        if (GlobalStates.screenLocked) root.updateLockRecoveryMarker(true);
+        Qt.callLater(root.initIfReady);
+    }
 }

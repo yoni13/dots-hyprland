@@ -7,6 +7,7 @@ disk_cache="${XDG_CACHE_HOME:-$HOME/.cache}/quickshell"
 ram_cache_root="${QUICKSHELL_RAM_CACHE_ROOT:-/dev/shm/quickshell-$UID}"
 ram_cache="$ram_cache_root/cache"
 supervisor_lock="${XDG_RUNTIME_DIR:-/tmp}/quickshell-supervisor-${qs_config}.lock"
+lock_recovery_marker="${XDG_RUNTIME_DIR:-/tmp}/quickshell-lock-active"
 
 exec 9>"$supervisor_lock"
 if ! flock -n 9; then
@@ -23,8 +24,11 @@ is_qs_alive() {
 
 restore_locked_session() {
   local session_id="${XDG_SESSION_ID:-}"
-  [[ -n "$session_id" ]] || return 0
-  [[ "$(loginctl show-session "$session_id" -p LockedHint --value 2>/dev/null)" == "yes" ]] || return 0
+  local locked_hint="no"
+  if [[ -n "$session_id" ]]; then
+    locked_hint="$(loginctl show-session "$session_id" -p LockedHint --value 2>/dev/null)"
+  fi
+  [[ -e "$lock_recovery_marker" || "$locked_hint" == "yes" ]] || return 0
 
   log "start_qs: session remains locked; restoring lock UI"
   if qs -c "$qs_config" ipc call lock activate >>"$log_file" 2>&1; then

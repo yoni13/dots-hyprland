@@ -112,18 +112,14 @@ Singleton {
                     root.keyringData = JSON.parse(data);
                     // console.log("[KeyringStorage] Keyring data fetched:", JSON.stringify(root.keyringData));
                 } catch (e) {
-                    console.error("[KeyringStorage] Failed to get keyring data, reinitializing.");
-                    root.keyringData = {};
-                    saveKeyringData()
+                    console.error("[KeyringStorage] Ignoring malformed keyring data to avoid overwriting stored secrets.");
                 }
             }
         }
         onExited: (exitCode, exitStatus) => {
             // console.log("[KeyringStorage] Keyring data fetch process exited with code:", exitCode);
             if (exitCode === 1) {
-                console.error("[KeyringStorage] Entry not found, initializing.");
-                root.keyringData = {};
-                saveKeyringData()
+                console.warn("[KeyringStorage] Entry not found; it will be created when data is explicitly saved.");
             }
             if (exitCode !== 2) {
                 root.loaded = true;

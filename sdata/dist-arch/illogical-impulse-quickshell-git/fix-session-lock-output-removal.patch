@@ -1,30 +1,41 @@
 From: illogical-impulse <noreply@localhost>
-Subject: [PATCH] wayland/lock: destroy surfaces before removed outputs
+Subject: [PATCH] wayland/lock: destroy native window before removed output
 
 Qt emits screenRemoved while the disappearing QWaylandScreen and wl_output
-are still alive. Deferring WlSessionLockSurface deletion until the next event
-loop iteration lets Qt release that wl_output first, leaving the native lock
-surface attached to a stale protocol object.
+are still alive. Deferring native window destruction until the next event loop
+iteration lets Qt release that wl_output first, leaving the lock surface
+attached to a stale protocol object.
 
-Destroy the wrapper synchronously in the screen-removal callback. Its
-destructor immediately destroys the QWindow's native Wayland resources while
-leaving deletion of the QQuickWindow object itself deferred.
+Destroy only the QWindow's native Wayland resources synchronously in the
+screen-removal callback, then keep deletion of the QML wrapper deferred. This
+preserves protocol ordering without deleting a QML object while bindings or
+signal handlers may still reference it.
 ---
- src/wayland/session_lock.cpp | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ src/wayland/session_lock.cpp | 7 ++++++-
+ src/wayland/session_lock.hpp | 4 ++++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/src/wayland/session_lock.cpp b/src/wayland/session_lock.cpp
-index 1ae8d2e..1c94471 100644
+index 1ae8d2e..54afa47 100644
 --- a/src/wayland/session_lock.cpp
 +++ b/src/wayland/session_lock.cpp
-@@ -73,7 +73,7 @@ void WlSessionLock::updateSurfaces(bool show, WlSessionLock* old) {
- 	for (auto& [screen, surface]: map) {
- 		if (!screens.contains(screen)) {
- 			this->surfaces.remove(screen);
--			surface->deleteLater();
-+			delete surface;
- 		}
- 	}
- 
--- 
-2.50.1
+@@ -75,0 +76 @@ void WlSessionLock::updateSurfaces(bool show, WlSessionLock* old) {
++			surface->destroyWindow();
+@@ -213 +214 @@ WlSessionLockSurface::~WlSessionLockSurface() {
+-		this->window->destroy();
++		this->destroyWindow();
+@@ -217,0 +219,4 @@ WlSessionLockSurface::~WlSessionLockSurface() {
++void WlSessionLockSurface::destroyWindow() {
++	if (this->window != nullptr) this->window->destroy();
++}
++
+diff --git a/src/wayland/session_lock.hpp b/src/wayland/session_lock.hpp
+index 9a34eaf..5174ec8 100644
+--- a/src/wayland/session_lock.hpp
++++ b/src/wayland/session_lock.hpp
+@@ -182,0 +183,2 @@ private:
++	void destroyWindow();
++
+@@ -187,0 +190,2 @@ private:
++
++	friend class WlSessionLock;

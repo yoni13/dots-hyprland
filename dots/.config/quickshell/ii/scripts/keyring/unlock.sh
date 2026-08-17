@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Skip if already unlocked
 if "${SCRIPT_DIR}/is_unlocked.sh"; then
-    exit 1
+    exit 0
 fi
 
 # Prompt for password if not provided
